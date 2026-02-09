@@ -18,6 +18,7 @@ getcontext().prec = 50
 # Type aliases for clarity
 NumericType = Union[float, int, AbsoluteValue, EternalRatio]
 CompensatedResult = Tuple[AbsoluteValue, float]  # (result, compensation_factor)
+CompensatedDivideResult = Tuple[EternalRatio, float]  # (ratio, compensation_factor)
 
 
 class Operations:
@@ -112,28 +113,34 @@ class Operations:
     
     @staticmethod
     def compensated_divide(numerator: AbsoluteValue, denominator: AbsoluteValue,
-                          compensation_factor: float = 1.0) -> EternalRatio:
+                          compensation_factor: float = 1.0) -> "CompensatedDivideResult":
         """Perform compensated division using EternalRatio.
-        
+
         This operation avoids traditional division issues by creating a structural
         ratio that maintains mathematical stability.
-        
+
         Args:
-            numerator: AbsoluteValue to divide
-            denominator: AbsoluteValue to divide by
-            compensation_factor: Factor to adjust compensation strength
-            
+            numerator: AbsoluteValue to divide.
+            denominator: AbsoluteValue to divide by.
+            compensation_factor: Factor to adjust compensation strength.
+
         Returns:
-            EternalRatio representing the division result
-            
+            Tuple of (EternalRatio result, applied_compensation_factor).
+
         Raises:
-            ValueError: If denominator is Absolute (magnitude=0)
+            ValueError: If denominator is Absolute (magnitude=0).
         """
         if denominator.is_absolute():
             raise ValueError('Cannot divide by Absolute (denominator magnitude=0)')
-        
+
+        # Detect near-Absolute denominator and compute compensation
+        applied_compensation = 1.0
+        if denominator.magnitude < Operations.COMPENSATION_THRESHOLD:
+            applied_compensation = denominator.magnitude / Operations.COMPENSATION_THRESHOLD
+
         # Create EternalRatio for stable division
-        return EternalRatio(numerator=numerator, denominator=denominator)
+        ratio = EternalRatio(numerator=numerator, denominator=denominator)
+        return ratio, applied_compensation
     
     @staticmethod
     def compensated_power(base: AbsoluteValue, exponent: float,

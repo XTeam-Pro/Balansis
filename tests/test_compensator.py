@@ -1118,5 +1118,131 @@ class TestCompensationIntegration:
         assert isinstance(result2, AbsoluteValue)
 
 
+class TestCompensatorRingBuffer:
+    """Test ring buffer behavior of Compensator history."""
+
+    def test_max_history_size_default(self):
+        """Test default max_history_size is 10000."""
+        strategy = CompensationStrategy()
+        assert strategy.max_history_size == 10000
+
+    def test_max_history_size_custom(self):
+        """Test custom max_history_size."""
+        strategy = CompensationStrategy(max_history_size=100)
+        assert strategy.max_history_size == 100
+
+    def test_history_bounded_by_max_size(self):
+        """Test that history does not exceed max_history_size."""
+        strategy = CompensationStrategy(max_history_size=5)
+        compensator = Compensator(strategy=strategy)
+
+        a = AbsoluteValue(magnitude=1e-13, direction=1)
+        b = AbsoluteValue(magnitude=1e-13, direction=-1)
+
+        for _ in range(20):
+            compensator.compensate_addition(a, b)
+
+        assert len(compensator.history) <= 5
+
+    def test_history_fifo_eviction(self):
+        """Test that oldest records are evicted first."""
+        strategy = CompensationStrategy(max_history_size=3)
+        compensator = Compensator(strategy=strategy)
+
+        a = AbsoluteValue(magnitude=1e-13, direction=1)
+        b = AbsoluteValue(magnitude=1e-13, direction=-1)
+
+        for _ in range(10):
+            compensator.compensate_addition(a, b)
+
+        assert len(compensator.history) <= 3
+
+    def test_set_strategy_resizes_history(self):
+        """Test that set_strategy resizes history deque."""
+        compensator = Compensator()
+        a = AbsoluteValue(magnitude=1e-13, direction=1)
+        b = AbsoluteValue(magnitude=1e-13, direction=-1)
+
+        for _ in range(10):
+            compensator.compensate_addition(a, b)
+
+        new_strategy = CompensationStrategy(max_history_size=3)
+        compensator.set_strategy(new_strategy)
+
+        assert len(compensator.history) <= 3
+
+    def test_reset_history_clears_deque(self):
+        """Test reset_history clears the deque."""
+        compensator = Compensator()
+        a = AbsoluteValue(magnitude=1e-13, direction=1)
+        b = AbsoluteValue(magnitude=1e-13, direction=-1)
+
+        compensator.compensate_addition(a, b)
+        assert len(compensator.history) > 0
+
+        compensator.reset_history()
+        assert len(compensator.history) == 0
+
+
+class TestCompensationStrategyProfiles:
+    """Test CompensationStrategy profile class methods."""
+
+    def test_high_precision_profile(self):
+        """Test high_precision strategy profile."""
+        strategy = CompensationStrategy.high_precision()
+        assert strategy.stability_threshold == 1e-15
+        assert strategy.overflow_threshold == 1e50
+        assert strategy.underflow_threshold == 1e-50
+        assert strategy.max_iterations == 1000
+        assert strategy.convergence_tolerance == 1e-14
+        assert strategy.balance_factor == 0.1
+        assert strategy.max_history_size == 50000
+
+    def test_balanced_profile(self):
+        """Test balanced strategy profile."""
+        strategy = CompensationStrategy.balanced()
+        assert strategy.stability_threshold == 1e-12
+        assert strategy.overflow_threshold == 1e100
+        assert strategy.max_iterations == 100
+        assert strategy.convergence_tolerance == 1e-10
+        assert strategy.balance_factor == 0.5
+        assert strategy.max_history_size == 10000
+
+    def test_fast_profile(self):
+        """Test fast strategy profile."""
+        strategy = CompensationStrategy.fast()
+        assert strategy.stability_threshold == 1e-8
+        assert strategy.overflow_threshold == 1e200
+        assert strategy.max_iterations == 10
+        assert strategy.convergence_tolerance == 1e-6
+        assert strategy.balance_factor == 0.9
+        assert strategy.max_history_size == 1000
+
+    def test_profiles_return_valid_strategies(self):
+        """Test all profiles create valid CompensationStrategy instances."""
+        for profile in [
+            CompensationStrategy.high_precision,
+            CompensationStrategy.balanced,
+            CompensationStrategy.fast,
+        ]:
+            strategy = profile()
+            assert isinstance(strategy, CompensationStrategy)
+            assert 0.0 <= strategy.balance_factor <= 1.0
+            assert strategy.max_history_size > 0
+
+    def test_profiles_usable_with_compensator(self):
+        """Test profiles work correctly with Compensator."""
+        for profile in [
+            CompensationStrategy.high_precision,
+            CompensationStrategy.balanced,
+            CompensationStrategy.fast,
+        ]:
+            compensator = Compensator(strategy=profile())
+            a = AbsoluteValue(magnitude=3.0, direction=1)
+            b = AbsoluteValue(magnitude=2.0, direction=1)
+            result = compensator.compensate_addition(a, b)
+            assert isinstance(result, AbsoluteValue)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
