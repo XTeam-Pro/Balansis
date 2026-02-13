@@ -19,6 +19,8 @@ Example:
     >>> ratio = EternalRatio(numerator=a, denominator=b)
 """
 
+from typing import Union
+
 from balansis.core.absolute import AbsoluteValue
 from balansis.core.eternity import EternalRatio
 from balansis.core.operations import Operations
@@ -74,8 +76,26 @@ __all__ = [
     "ACT_STABILITY_THRESHOLD",
     "ACT_ABSOLUTE_THRESHOLD",
     "ACT_COMPENSATION_FACTOR",
+    "B",
 ]
-def B(value):
+
+
+def B(value: Union[int, float, str, AbsoluteValue]) -> AbsoluteValue:
+    """Convert a numeric value to an AbsoluteValue.
+
+    Convenience constructor that accepts int, float, str, or AbsoluteValue
+    and returns an AbsoluteValue instance via AbsoluteValue.from_float().
+
+    Args:
+        value: The value to convert. Strings are first parsed as floats.
+
+    Returns:
+        AbsoluteValue representing the input value.
+
+    Raises:
+        TypeError: If value is not int, float, str, or AbsoluteValue.
+        ValueError: If string cannot be parsed as float.
+    """
     if isinstance(value, (int, float)):
         return AbsoluteValue.from_float(float(value))
     if isinstance(value, str):

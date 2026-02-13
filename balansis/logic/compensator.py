@@ -6,8 +6,9 @@ The Compensator analyzes mathematical operations and applies corrections to
 prevent instabilities, overflows, and singularities.
 """
 
+import collections
 import math
-from typing import List, Dict, Tuple, Optional, Any, Callable
+from typing import List, Dict, Deque, Tuple, Optional, Any, Callable
 from enum import Enum
 from dataclasses import dataclass
 from pydantic import BaseModel, Field, validator
@@ -73,7 +74,12 @@ class CompensationStrategy(BaseModel):
         default=0.5,
         description="Factor for balance compensation (0.0 to 1.0)"
     )
-    
+    max_history_size: int = Field(
+        default=10000,
+        gt=0,
+        description="Maximum number of compensation records to keep in history"
+    )
+
     @validator('balance_factor')
     def validate_balance_factor(cls, v: float) -> float:
         """Ensure balance factor is in valid range."""
@@ -84,6 +90,66 @@ class CompensationStrategy(BaseModel):
     class Config:
         """Pydantic configuration."""
         validate_assignment = True
+
+    @classmethod
+    def high_precision(cls) -> 'CompensationStrategy':
+        """Create a high-precision compensation strategy.
+
+        Suitable for scientific computing and financial calculations
+        where maximum numerical stability is required.
+
+        Returns:
+            CompensationStrategy configured for high precision.
+        """
+        return cls(
+            stability_threshold=1e-15,
+            overflow_threshold=1e50,
+            underflow_threshold=1e-50,
+            max_iterations=1000,
+            convergence_tolerance=1e-14,
+            balance_factor=0.1,
+            max_history_size=50000,
+        )
+
+    @classmethod
+    def balanced(cls) -> 'CompensationStrategy':
+        """Create a balanced compensation strategy.
+
+        Suitable for general-purpose numerical computing with a
+        reasonable trade-off between precision and performance.
+
+        Returns:
+            CompensationStrategy with balanced configuration.
+        """
+        return cls(
+            stability_threshold=1e-12,
+            overflow_threshold=1e100,
+            underflow_threshold=1e-100,
+            max_iterations=100,
+            convergence_tolerance=1e-10,
+            balance_factor=0.5,
+            max_history_size=10000,
+        )
+
+    @classmethod
+    def fast(cls) -> 'CompensationStrategy':
+        """Create a fast compensation strategy.
+
+        Suitable for real-time systems and ML training loops
+        where speed is more important than extreme precision.
+
+        Returns:
+            CompensationStrategy configured for performance.
+        """
+        return cls(
+            stability_threshold=1e-8,
+            overflow_threshold=1e200,
+            underflow_threshold=1e-200,
+            max_iterations=10,
+            convergence_tolerance=1e-6,
+            balance_factor=0.9,
+            max_history_size=1000,
+        )
 
 
 class Compensator:
@@ -113,7 +179,9 @@ class Compensator:
             strategy: Compensation strategy configuration
         """
         self.strategy = strategy or CompensationStrategy()
-        self.history: List[CompensationRecord] = []
+        self.history: Deque[CompensationRecord] = collections.deque(
+            maxlen=self.strategy.max_history_size
+        )
         self.active_compensations: Dict[str, float] = {}
         self._operation_count = 0
     
@@ -395,8 +463,8 @@ class Compensator:
             comp_denominator = denominator
         
         # Perform the operation
-        result = Operations.compensated_divide(numerator, comp_denominator)
-        
+        result, op_compensation = Operations.compensated_divide(numerator, comp_denominator)
+
         # Record the compensation
         if compensations:
             record = CompensationRecord(
@@ -404,7 +472,7 @@ class Compensator:
                 compensation_type=compensations[0],
                 original_values=[numerator, denominator],
                 compensated_values=[numerator, comp_denominator],
-                compensation_factor=1.0,  # EternalRatio doesn't return compensation factor
+                compensation_factor=op_compensation,
                 stability_metric=1.0 if result.is_stable() else 0.0,
                 timestamp=self._operation_count
             )
@@ -518,7 +586,7 @@ class Compensator:
             'compensation_rate': len(self.history) / max(1, self._operation_count),
             'compensation_types': compensation_types,
             'average_stability': total_stability / len(self.history),
-            'latest_compensations': self.history[-5:] if len(self.history) > 5 else self.history
+            'latest_compensations': list(self.history)[-5:]
         }
     
     def reset_history(self) -> None:
@@ -529,11 +597,16 @@ class Compensator:
     
     def set_strategy(self, strategy: CompensationStrategy) -> None:
         """Update the compensation strategy.
-        
+
         Args:
-            strategy: New compensation strategy
+            strategy: New compensation strategy.
         """
         self.strategy = strategy
+        # Resize history deque if max_history_size changed
+        if self.history.maxlen != strategy.max_history_size:
+            self.history = collections.deque(
+                self.history, maxlen=strategy.max_history_size
+            )
     
     def __repr__(self) -> str:
         """String representation for debugging."""

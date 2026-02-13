@@ -171,18 +171,20 @@ class TestCompensatedArithmetic:
         av1 = AbsoluteValue(magnitude=12.0, direction=1.0)
         av2 = AbsoluteValue(magnitude=3.0, direction=1.0)
         
-        result = Operations.compensated_divide(av1, av2)
+        result, compensation = Operations.compensated_divide(av1, av2)
         # EternalRatio doesn't have magnitude/direction, check ratio value
         assert abs(result.numerical_value() - 4.0) < ACT_EPSILON
-    
+        assert isinstance(compensation, float)
+
     def test_compensated_divide_opposite_signs(self):
         """Test compensated division with opposite signs."""
         av1 = AbsoluteValue(magnitude=12.0, direction=1.0)
         av2 = AbsoluteValue(magnitude=3.0, direction=-1.0)
-        
-        result = Operations.compensated_divide(av1, av2)
+
+        result, compensation = Operations.compensated_divide(av1, av2)
         # EternalRatio doesn't have magnitude/direction, check ratio value
         assert abs(result.numerical_value() + 4.0) < ACT_EPSILON  # negative result
+        assert isinstance(compensation, float)
     
     def test_compensated_divide_by_absolute(self):
         """Test compensated division by Absolute raises error."""
@@ -197,18 +199,20 @@ class TestCompensatedArithmetic:
         absolute = AbsoluteValue.absolute()
         av = AbsoluteValue(magnitude=5.0, direction=1.0)
         
-        result = Operations.compensated_divide(absolute, av)
+        result, compensation = Operations.compensated_divide(absolute, av)
         # Division of Absolute by non-Absolute should result in EternalRatio with Absolute numerator
         assert result.numerator.is_absolute()
+        assert isinstance(compensation, float)
     
     def test_compensated_divide_eternal_ratio_creation(self):
         """Test EternalRatio creation in division (line 136)."""
         numerator = AbsoluteValue(magnitude=8.0, direction=1.0)
         denominator = AbsoluteValue(magnitude=2.0, direction=-1.0)
         
-        result = Operations.compensated_divide(numerator, denominator)
-        
+        result, compensation = Operations.compensated_divide(numerator, denominator)
+
         assert isinstance(result, EternalRatio)
+        assert isinstance(compensation, float)
         assert result.numerator == numerator
         assert result.denominator == denominator
 
@@ -830,9 +834,10 @@ class TestCompensationStability:
         tiny = AbsoluteValue(magnitude=1e-100, direction=1.0)
         
         # Operations should handle underflow gracefully
-        result = Operations.compensated_divide(tiny, AbsoluteValue(magnitude=1e50, direction=1.0))
+        result, compensation = Operations.compensated_divide(tiny, AbsoluteValue(magnitude=1e50, direction=1.0))
         assert result.numerator.magnitude >= 0.0
         assert not math.isnan(result.numerator.magnitude)
+        assert isinstance(compensation, float)
 
 
 class TestACTCompliance:
@@ -870,9 +875,9 @@ class TestACTCompliance:
         scaled_av2, _ = Operations.compensated_multiply(av2, scale)
         
         # Ratio should be preserved
-        original_ratio = Operations.compensated_divide(av1, av2)
-        scaled_ratio = Operations.compensated_divide(scaled_av1, scaled_av2)
-        
+        original_ratio, _ = Operations.compensated_divide(av1, av2)
+        scaled_ratio, _ = Operations.compensated_divide(scaled_av1, scaled_av2)
+
         assert abs(original_ratio.numerical_value() - scaled_ratio.numerical_value()) < ACT_EPSILON
 
 
