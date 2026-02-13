@@ -57,10 +57,12 @@ poetry install
 poetry shell
 ```
 
-### Using pip (Coming Soon)
+### Using pip
 ```bash
-# Package will be available on PyPI soon
-pip install balansis
+pip install balansis              # core (pydantic + numpy)
+pip install balansis[plot]        # + matplotlib, plotly
+pip install balansis[notebook]    # + jupyter, ipykernel
+pip install balansis[all]         # all optional dependencies
 ```
 
 ### Development Installation

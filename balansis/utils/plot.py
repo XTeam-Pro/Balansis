@@ -946,7 +946,7 @@ class PlotUtils:
             y=numerical_values,
             mode='markers+lines',
             marker=dict(
-                color=self.config.color_scheme[2],
+                color=self.config.color_palette[2],
                 size=self.config.marker_size,
                 opacity=self.config.alpha
             ),
@@ -1157,7 +1157,7 @@ class PlotUtils:
                         y=magnitudes,
                         mode='markers+lines',
                         marker=dict(
-                            color=[self.config.color_scheme[0] if d > 0 else self.config.color_scheme[1] for d in directions],
+                            color=[self.config.color_palette[0] if d > 0 else self.config.color_palette[1] for d in directions],
                             size=self.config.marker_size,
                             opacity=self.config.alpha
                         ),

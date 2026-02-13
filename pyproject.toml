@@ -22,10 +22,15 @@ keywords = ["mathematics", "compensation-theory", "absolute", "eternity", "stabi
 python = "^3.10"
 pydantic = "^2.5.0"
 numpy = "^1.24.0"
-matplotlib = "^3.7.0"
-plotly = "^5.17.0"
-jupyter = "^1.0.0"
-ipykernel = "^6.25.0"
+matplotlib = {version = "^3.7.0", optional = true}
+plotly = {version = "^5.17.0", optional = true}
+jupyter = {version = "^1.0.0", optional = true}
+ipykernel = {version = "^6.25.0", optional = true}
+
+[tool.poetry.extras]
+plot = ["matplotlib", "plotly"]
+notebook = ["jupyter", "ipykernel"]
+all = ["matplotlib", "plotly", "jupyter", "ipykernel"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
