@@ -5,6 +5,7 @@ Accuracy Benchmarks for Balansis ACT vs Classical Methods
 с классическими численными методами (float64, Decimal, Kahan summation).
 """
 
+import json
 import time
 import math
 import statistics
@@ -13,6 +14,7 @@ from typing import List, Dict, Any, Tuple, Callable
 import numpy as np
 
 from balansis import AbsoluteValue, Operations, Compensator, ABSOLUTE
+from balansis.core.operations import Operations as CoreOps
 
 
 class AccuracyBenchmark:
@@ -53,7 +55,30 @@ class AccuracyBenchmark:
         elif scenario == "harmonic_series":
             # Гармонический ряд
             return [1.0 / (i + 1) for i in range(size)]
-            
+
+        elif scenario == "catastrophic_near_zero":
+            # Серия операций 1+eps, -1-eps вблизи нуля
+            eps = 1e-15
+            data = []
+            for i in range(size):
+                if i % 2 == 0:
+                    data.append(1.0 + eps * (i + 1))
+                else:
+                    data.append(-1.0 - eps * i)
+            return data
+
+        elif scenario == "ill_conditioned_matrix":
+            # Ill-conditioned matrix row sums (condition number > 1e10)
+            np.random.seed(42)
+            n = min(size, 100)
+            U, _ = np.linalg.qr(np.random.randn(n, n))
+            V, _ = np.linalg.qr(np.random.randn(n, n))
+            singular_values = np.logspace(0, -10, n)
+            A = U @ np.diag(singular_values) @ V.T
+            b = np.random.randn(n)
+            # Return the row-products as summation data
+            return (A @ b).tolist()
+
         else:  # random
             np.random.seed(42)
             return np.random.uniform(-1000, 1000, size).tolist()
@@ -156,7 +181,9 @@ class AccuracyBenchmark:
         """Запускает полный набор тестов точности."""
         scenarios = [
             "catastrophic_cancellation",
-            "alternating_series", 
+            "catastrophic_near_zero",
+            "ill_conditioned_matrix",
+            "alternating_series",
             "small_large_mix",
             "geometric_series",
             "harmonic_series",
@@ -301,6 +328,36 @@ class AccuracyBenchmark:
         report.append("- ACT особенно эффективен при работе с данными разных порядков величин")
         
         return "\n".join(report)
+
+    def to_json(self, results: Dict[str, List[Dict[str, Any]]]) -> str:
+        """Конвертирует результаты в JSON строку для CI парсинга."""
+        return json.dumps(results, indent=2, default=str)
+
+    def check_stability_threshold(
+        self, results: Dict[str, List[Dict[str, Any]]], threshold: float = 10.0
+    ) -> bool:
+        """Проверяет, что ACT stability ratio превышает порог vs IEEE 754.
+
+        Returns:
+            True если все сценарии проходят проверку.
+        """
+        passed = True
+        for scenario, scenario_results in results.items():
+            for test_result in scenario_results:
+                methods = test_result.get("methods", {})
+                act_data = methods.get("act", {})
+                f64_data = methods.get("float64", {})
+                act_err = act_data.get("absolute_error", float("inf"))
+                f64_err = f64_data.get("absolute_error", float("inf"))
+                if act_err > 0 and f64_err != float("inf"):
+                    ratio = f64_err / act_err
+                    if ratio < threshold:
+                        print(
+                            f"  WARN: {scenario} size={test_result['size']}: "
+                            f"stability_ratio={ratio:.2f} < {threshold}"
+                        )
+                        passed = False
+        return passed
 
 
 def main():

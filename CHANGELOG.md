@@ -25,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarified installation methods (Poetry vs pip)
 - Added proper documentation links throughout the project
 
+## [0.5.0] - 2026-02-17
+
+### Added
+- ACT-Compensated SVD (Householder bidiagonalization + QR iteration)
+- ACT-Compensated QR (Householder reflections, Givens, Modified Gram-Schmidt)
+- AdaptiveEternalOptimizer (Adam-like with ACT moments, gradient clipping, warmup/cosine decay)
+- Enhanced numpy integration (vectorized ACT operations: compensated_array_add, compensated_array_multiply, compensated_dot_product, compensated_outer_product, compensated_softmax)
+- Lean4 formal specification (12 axioms)
+- CI-integrated benchmark suite with regression tracking
+- ACT Specification v1.0 document
+
 ## [0.1.0] - 2024-01-XX
 
 ### Added

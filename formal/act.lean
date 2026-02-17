@@ -1,8 +1,19 @@
-axiom Absolute : Type
-axiom magnitude : Absolute → ℝ
-axiom direction : Absolute → ℤ
-def add (a b : Absolute) : Absolute := a
-def mul (a b : Absolute) : Absolute := a
-axiom comm_add : ∀ a b : Absolute, add a b = add b a
-axiom compensation : ∀ a b : Absolute, magnitude a = magnitude b → direction a = - direction b → magnitude (add a b) = 0
-lemma add_comm (a b : Absolute) : add a b = add b a := comm_add a b
+/-
+  ACT (Absolute Compensation Theory) — Lean4 Formal Specification
+
+  This file serves as the import hub for the ACT axiom system.
+  See individual modules for axiom statements and proofs.
+
+  Structure:
+    - ACT.Absolute  : AbsoluteValue axioms A1–A5
+    - ACT.Eternity  : EternalRatio axioms E1–E4
+    - ACT.Algebra   : Structural axioms S1–S3
+
+  Authors: Balansis Team
+  Version: 1.0.0
+  Date: 2026-02-17
+-/
+
+import ACT.Absolute
+import ACT.Eternity
+import ACT.Algebra
