@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Lean4
+.lake/
+lake-packages/
+lake-manifest.json
