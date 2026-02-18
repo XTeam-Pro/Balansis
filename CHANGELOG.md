@@ -5,27 +5,68 @@ All notable changes to the Balansis project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
 ## [Unreleased]
 
+### Planned
+- Balansis v0.5 (Phase 8 target): stable API, complete `linalg/` (GEMM, SVD, QR), PyTorch integration
+- ACT benchmark suite vs IEEE 754 and Kahan summation
+- LaTeX paper draft for arxiv submission
+
+---
+
+## [0.2.0] — 2026-02-18 — Lean4 Formal Verification Edition
+
 ### Added
-- Complete theoretical documentation for Absolute Compensation Theory (ACT)
-- Formal mathematical specification in `docs/theory/act_whitepaper.md`
-- Algebraic proofs and edge case analysis in `docs/theory/algebraic_proofs.md`
-- Comprehensive precision and stability guide in `docs/guide/precision_and_stability.md`
-- Integration patterns for NumPy, Pandas, and PyTorch
-- Diagnostic tools for stability analysis and performance profiling
-- Comparative benchmarks with IEEE 754, Kahan summation, and Python Decimal
 
-### Changed
-- Updated README.md with comprehensive installation instructions
-- Enhanced project documentation structure
-- Added academic research section to README
+#### Lean4 Formal Proofs (`formal/BalansisFormal/`)
+Complete formalization of ACT using mathlib4 (v4.28.0). All 12 axioms proven — **0 sorry, 0 axioms, 0 errors**.
 
-### Fixed
-- Clarified installation methods (Poetry vs pip)
-- Added proper documentation links throughout the project
+- **`Direction.lean`** (77 lines)
+  - `Direction` type: `Pos | Neg`
+  - 13 theorems: `neg_ne_pos`, `double_neg`, `mul_same`, `mul_diff`, `eq_or_ne`, etc.
 
-## [0.1.0] - 2024-01-XX
+- **`AbsoluteValue.lean`** (305 lines)
+  - `AbsoluteValue` over ℝ (NNReal magnitude + Direction)
+  - `toReal` bridge: `toReal (mk m d) = m.toReal * d.toReal`
+  - `toReal_injective`: structural equality from real equality
+  - Axioms proven as theorems:
+    - **A1** `add_absolute_right`: additive identity (`ABSOLUTE` = zero analog)
+    - **A2** `add_comm`: commutativity
+    - **A3** `add_assoc`: associativity
+    - **A4** `add_inverse`: additive inverse exists (opposite direction, equal magnitude)
+    - **A5** `add_cancellation`: perfect cancellation (equal magnitude, opposite direction → ABSOLUTE)
+
+- **`EternalRatio.lean`** (208 lines)
+  - `EternalRatio` type (replaces IEEE 754 infinity)
+  - `mul_toReal` bridge proof
+  - Axioms proven as theorems:
+    - **E1** `mul_identity`: multiplicative identity
+    - **E2** `mul_comm`: commutativity
+    - **E3** `mul_assoc`: associativity
+    - **E4** `mul_inverse`: multiplicative inverse exists
+
+- **`Algebra.lean`** (192 lines)
+  - `mulInv`: proven via `congr_arg` with well-foundedness
+  - Axioms proven as theorems:
+    - **S1** `s1_distributivity`: left distributivity over addition
+    - **S2** `s2_mul_inverse`: inverse law via `rw [mul_toReal]` + `nlinarith`
+    - **S3** `s3_commutativity_with_add`: cross-structure commutativity
+
+- **`formal/README.md`** updated — build instructions with `lake build`
+
+#### CI/CD
+- `qa-gates.yml` in StudyNinja-Eco: lean-formal job now builds Balansis formal proofs in matrix strategy alongside MagicBrain
+
+### Infrastructure
+- `.gitignore` created for Python + Lean4 build artifacts
+- Remote URL migrated to SSH + XTeam-Pro organization
+- `development` branch established as default for active work
+
+---
+
+## [0.1.0] — 2025-01-XX — Initial Release
 
 ### Added
 - Initial implementation of Absolute Compensation Theory (ACT)
@@ -36,12 +77,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Algebraic structures:
   - `AbsoluteGroup` implementation with group theory verification
   - `EternityField` implementation with field theory verification
-- Basic arithmetic operations with compensation logic
-- Comprehensive test suite with >95% coverage
+- Compensated arithmetic operations: `compensated_add`, `compensated_multiply`, `compensated_divide`, `compensated_power`
+- Near-cancellation detection (threshold 1e-15), overflow/underflow protection
+- `sequence_sum` (Kahan-compensated), `sequence_product`
+- Linear algebra: `gemm.py` (compensated GEMM), `svd.py` (Golub-Kahan + QR), `qr.py` (Householder/Givens/Gram-Schmidt)
+- ML optimizer: `EternalOptimizer`, `AdaptiveEternalOptimizer`, `EternalTorchOptimizer` (PyTorch subclass)
+- Finance module: `finance/ledger.py` (exact cancellation accounting)
+- NumPy integration: `numpy_integration.py` (vectorized ACT ops)
+- Memory: `memory/arena.py` (value pooling)
+- Lean4 formal specs (initial): `formal/ACT/Absolute.lean`, `Eternity.lean`, `Algebra.lean`
+- Comprehensive test suite with ≥95% coverage
 - Example Jupyter notebooks demonstrating core concepts
 - Poetry-based dependency management
-- Type safety with MyPy
-- Code quality tools (Black, isort, flake8)
+- Type safety with MyPy strict mode
+- Code quality tools: Black, isort, flake8, bandit, codespell, interrogate
+- Theoretical documentation:
+  - `docs/theory/act_whitepaper.md` — formal specification and axiomatics
+  - `docs/theory/algebraic_proofs.md` — algebraic proofs and edge case analysis
+  - `docs/guide/precision_and_stability.md` — precision guide with benchmark comparisons
 
 ### Security
 - No known security vulnerabilities in initial release
@@ -50,110 +103,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Versioning Policy
 
-This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
-
-- **MAJOR** version when you make incompatible API changes
-- **MINOR** version when you add functionality in a backwards compatible manner  
-- **PATCH** version when you make backwards compatible bug fixes
-
-### Version Number Format: `MAJOR.MINOR.PATCH`
-
-### Pre-release Versions
-Pre-release versions may be denoted by appending a hyphen and a series of dot separated identifiers:
-- `1.0.0-alpha` - Alpha release
-- `1.0.0-beta` - Beta release  
-- `1.0.0-rc.1` - Release candidate
+This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### API Stability Guarantees
 
-#### Stable APIs (MAJOR version changes only)
-- Core mathematical operations (`AbsoluteValue`, `EternalRatio`)
-- Public methods of algebraic structures (`AbsoluteGroup`, `EternityField`)
-- Compensator public interface
-
-#### Evolving APIs (MINOR version changes)
-- Utility functions and helper methods
-- Visualization and plotting tools
-- Integration patterns and examples
-
-#### Internal APIs (No stability guarantees)
-- Private methods and internal implementations
-- Test utilities and debugging tools
-- Development and build scripts
+| API Layer | Stability |
+|-----------|-----------|
+| Core types (`AbsoluteValue`, `EternalRatio`) | Stable — MAJOR version only |
+| Algebraic structures (`AbsoluteGroup`, `EternityField`) | Stable — MAJOR version only |
+| Compensated operations | Stable — MAJOR version only |
+| Utility functions, integration patterns | Evolving — MINOR version |
+| Lean4 formal specs | Evolving — MINOR version |
+| Private methods, test utilities | No guarantees |
 
 ### Deprecation Policy
 
-1. **Deprecation Notice**: Features marked for removal will be deprecated for at least one MINOR version
-2. **Warning Period**: Deprecated features will emit warnings when used
-3. **Documentation**: All deprecations will be clearly documented in the changelog
-4. **Migration Path**: Alternative approaches will be provided for deprecated features
-
-### Breaking Changes
-
-Breaking changes will only be introduced in MAJOR version releases and will be:
-- Clearly documented in the changelog
-- Accompanied by migration guides
-- Preceded by deprecation warnings when possible
-
-### Compatibility Matrix
-
-| Balansis Version | Python Version | Dependencies |
-|------------------|----------------|--------------|
-| 0.1.x            | 3.10+          | See pyproject.toml |
-| 1.0.x            | 3.10+          | TBD |
-
-### Release Schedule
-
-- **PATCH** releases: As needed for bug fixes
-- **MINOR** releases: Monthly or bi-monthly for new features
-- **MAJOR** releases: Annually or when significant API changes are required
-
-### Support Policy
-
-- **Current MAJOR version**: Full support with bug fixes and security updates
-- **Previous MAJOR version**: Security updates only for 12 months after new MAJOR release
-- **Older versions**: Community support only
-
----
-
-## Contributing to the Changelog
-
-When contributing to Balansis, please update this changelog according to these guidelines:
-
-### Categories
-Use these categories for organizing changes:
-- **Added** for new features
-- **Changed** for changes in existing functionality  
-- **Deprecated** for soon-to-be removed features
-- **Removed** for now removed features
-- **Fixed** for any bug fixes
-- **Security** for vulnerability fixes
-
-### Format
-- Keep an "Unreleased" section at the top for upcoming changes
-- Add new versions in reverse chronological order
-- Use ISO date format (YYYY-MM-DD) for release dates
-- Link to relevant issues and pull requests when applicable
-- Write clear, concise descriptions that users can understand
-
-### Examples
-
-```markdown
-### Added
-- New `compensated_multiply` method for enhanced precision multiplication (#123)
-- Support for complex number operations in AbsoluteValue (#145)
-
-### Fixed  
-- Resolved numerical instability in edge case division by near-zero values (#156)
-- Fixed memory leak in large-scale compensated summation (#167)
-
-### Changed
-- Improved performance of EternalRatio operations by 25% (#134)
-- Updated error messages to be more descriptive (#142)
-
-### Deprecated
-- `legacy_add` method is deprecated, use `compensated_add` instead (#178)
-```
+Features marked for removal will:
+1. Be deprecated for at least one MINOR version with warnings
+2. Have migration paths documented in the changelog
+3. Be removed only in MAJOR releases
 
 ---
 
