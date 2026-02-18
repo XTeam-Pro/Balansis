@@ -1,9 +1,13 @@
 [tool.poetry]
 name = "balansis"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python mathematical library implementing Absolute Compensation Theory (ACT)"
 authors = ["Balansis Team <team@balansis.org>"]
+license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/studyninja/balansis"
+repository = "https://github.com/studyninja/balansis"
+documentation = "https://github.com/studyninja/balansis/tree/main/docs"
 packages = [{include = "balansis"}]
 classifiers = [
     "Development Status :: 3 - Alpha",
