@@ -2,6 +2,22 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.hypothesis/
+.tox/
+.nox/
+.cache/
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.sample
 .venv/
 
 # Lean4
