@@ -1,0 +1,14 @@
+{
+  "version": "0.5.0",
+  "timestamp": "2026-02-17",
+  "accuracy": {
+    "catastrophic_cancellation_stability_ratio": 10.0,
+    "catastrophic_near_zero_stability_ratio": 10.0,
+    "ill_conditioned_stability_ratio": 10.0
+  },
+  "linalg": {
+    "gemm_reconstruction_error_act": 1e-14,
+    "svd_reconstruction_error_act": 1e-12,
+    "qr_orthogonality_error_act": 1e-14
+  }
+}
