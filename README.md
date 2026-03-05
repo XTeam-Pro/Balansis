@@ -1,238 +1,217 @@
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/XTeam-Pro/Balansis)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
+[![Coverage](https://img.shields.io/badge/coverage-95%25%2B-brightgreen.svg)](https://github.com/XTeam-Pro/Balansis)
+[![Lean4](https://img.shields.io/badge/Lean4-12%20axioms%20proven-blueviolet.svg)](./formal/)
+[![License](https://img.shields.io/badge/license-MIT%20%2F%20Commercial-blue.svg)](./COMMERCIAL_LICENSE.md)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 # Balansis
 
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/XTeam-Pro/Balansis)
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
-[![Coverage](https://img.shields.io/badge/coverage-95%25%2B-brightgreen.svg)](https://github.com/XTeam-Pro/Balansis)
-[![License: MIT](https://img.shields.io/badge/License-MIT%20%2F%20Commercial-blue.svg)](./COMMERCIAL_LICENSE.md)
-[![Lean4](https://img.shields.io/badge/Lean4-12%20axioms%20proven-blueviolet.svg)](./formal/)
-[![MAGIC Level](https://img.shields.io/badge/MAGIC-Level%201%20MetaBalansis-orange.svg)](https://github.com/XTeam-Pro/StudyNinja-Eco)
-[![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+**Python mathematical library implementing Absolute Compensation Theory (ACT) — a numerically stable arithmetic framework that replaces IEEE 754 zero and infinity with structurally sound alternatives.**
 
-**Математическая библиотека Python, реализующая Absolute Compensation Theory (ACT)**
-
-Balansis трансформирует вычислительную математику, заменяя традиционные ноль и бесконечность математически устойчивыми концепциями «Absolute» и «EternalRatio», устраняя численные нестабильности и сингулярности IEEE 754.
-
-[Whitepaper](docs/theory/act_whitepaper.md) | [Changelog](CHANGELOG.md) | [Formal Proofs](formal/) | [tnsim API](tnsim/)
+[Theory Whitepaper](docs/theory/act_whitepaper.md) | [Changelog](CHANGELOG.md) | [Formal Proofs](formal/) | [tnsim API](tnsim/)
 
 ---
 
-## Что такое Absolute Compensation Theory?
+## What is ACT?
 
-ACT — математический фреймворк, решающий фундаментальные проблемы вычислительной стабильности:
+Absolute Compensation Theory is a mathematical framework that eliminates the root causes of numerical instability in floating-point computation:
 
-- **Заменяет ноль** концепцией `ABSOLUTE` — стабильным математическим объектом, предотвращающим деление на ноль на уровне типов
-- **Заменяет бесконечность** концепцией `EternalRatio` — ограниченным представлением, исключающим переполнение
-- **Компенсированная арифметика** — каждая операция возвращает `(result, compensation_factor)` для отслеживания накопленной ошибки
-- **Формально верифицированная** — 12 алгебраических аксиом доказаны в Lean4 (Mathlib v4.28.0)
-
-### Ключевые инварианты
-
-- `AbsoluteValue(magnitude=0.0, direction=1)` — аддитивная идентичность (`ABSOLUTE`), аналог нуля
-- Идеальная компенсация: равные величины + противоположные направления → `ABSOLUTE` (без потери точности)
-- `EternalRatio.denominator` не может быть `ABSOLUTE` (проверяется при конструировании)
-- Порог определения близкого к нулю значения: `1e-15`
-- Защита от overflow/underflow: `1e100 / 1e-15`
+- **Replaces zero** with `ABSOLUTE` — an additive identity `AbsoluteValue(magnitude=0.0, direction=1)` that prevents division-by-zero at the type level rather than at runtime.
+- **Replaces infinity** with `EternalRatio` — a structurally bounded representation of a ratio whose denominator is guaranteed non-Absolute, making unbounded results impossible to construct.
+- **Compensated arithmetic** — every operation in `Operations` returns a `(result, compensation_factor)` tuple so accumulated error is tracked explicitly rather than silently absorbed.
+- **Formally verified** — all 12 algebraic axioms are proven in Lean4 (Mathlib v4.28.0) with zero `sorry`, zero errors, and zero admitted axioms.
 
 ---
 
-## Установка
-
-### Poetry (рекомендуется)
+## Installation
 
 ```bash
-git clone https://github.com/XTeam-Pro/Balansis.git
-cd balansis
-poetry install
-poetry shell
-```
-
-### pip
-
-```bash
+# Core library (Pydantic + NumPy)
 pip install balansis
 
-# Для разработки
-pip install -e ".[dev]"
+# With specific extras
+pip install balansis[plot]      # + matplotlib, plotly
+pip install balansis[notebook]  # + jupyter, ipykernel
+pip install balansis[torch]     # + torch (EternalTorchOptimizer)
+pip install balansis[all]       # everything
 ```
+
+| Extra | Additional dependencies |
+|-------|------------------------|
+| `plot` | matplotlib, plotly |
+| `notebook` | jupyter, ipykernel |
+| `torch` | torch |
+| `all` | all of the above |
+
+Core dependencies: `pydantic >= 2.5`, `numpy >= 1.24`. Python 3.10, 3.11, and 3.12 are supported.
 
 ---
 
-## Быстрый старт
+## Quick Start
 
-### Базовые операции
+### Core types and compensated operations
 
 ```python
-from balansis.core.absolute import AbsoluteValue
-from balansis.core.eternity import EternalRatio
-from balansis.core.operations import Operations
+from balansis import AbsoluteValue, EternalRatio, Operations, Compensator
+from balansis import ABSOLUTE, UNIT_POSITIVE, UNIT_NEGATIVE
+from balansis import B  # convenience constructor: B(5.0) == AbsoluteValue.from_float(5.0)
 
-# AbsoluteValue: magnitude >= 0, direction в {-1, 1}
-a = AbsoluteValue(magnitude=5.0, direction=1)   # +5
-b = AbsoluteValue(magnitude=3.0, direction=-1)  # -3
+# AbsoluteValue: immutable (Pydantic frozen=True), magnitude >= 0, direction in {-1, 1}
+a = AbsoluteValue(magnitude=5.0, direction=1)    # +5
+b = AbsoluteValue(magnitude=3.0, direction=-1)   # -3
 
-# ABSOLUTE — аналог нуля (аддитивная идентичность)
-absolute = AbsoluteValue(magnitude=0.0, direction=1)
+# ABSOLUTE is the additive identity — the ACT replacement for zero
+zero = AbsoluteValue(magnitude=0.0, direction=1)  # same as ABSOLUTE
 
-# Компенсированные операции возвращают (result, compensation_factor)
+# Inspect values
+print(a.to_float())      # 5.0
+print(a.is_absolute())   # False
+print(a.is_positive())   # True
+
+# Round-trip from Python float
+c = AbsoluteValue.from_float(-3.5)  # AbsoluteValue(magnitude=3.5, direction=-1)
+
+# Standard arithmetic operators are overloaded
+print(a + b)    # AbsoluteValue(magnitude=2.0, direction=1)   — perfect cancellation
+print(a - b)    # AbsoluteValue(magnitude=8.0, direction=1)
+print(a * 2.0)  # AbsoluteValue(magnitude=10.0, direction=1)
+print(a / 2.0)  # AbsoluteValue(magnitude=2.5, direction=1)
+print(-a)       # AbsoluteValue(magnitude=5.0, direction=-1)
+print(abs(a))   # AbsoluteValue(magnitude=5.0, direction=1)
+
+# Low-level compensated operations return (result, compensation_factor) tuples
 result, comp = Operations.compensated_add(a, b)
-print(f"5 + (-3) = {result}, compensation = {comp}")
+result, comp = Operations.compensated_multiply(a, b)
+result, comp = Operations.compensated_power(a, 2.0)
+result, comp = Operations.compensated_sqrt(a)
+result, comp = Operations.compensated_log(a)
+result, comp = Operations.compensated_exp(a)
 
-# EternalRatio — стабильное дробное представление
+# Kahan-compensated aggregation
+total, comp = Operations.sequence_sum([a, b, a])
+product, comp = Operations.sequence_product([a, b])
+
+# EternalRatio: structurally safe ratio — denominator cannot be ABSOLUTE
 ratio = EternalRatio(numerator=a, denominator=b)
-# denominator не может быть ABSOLUTE (проверяется конструктором)
+print(ratio.numerical_value())  # -5.0/3.0 (signed float)
+print(ratio.is_stable())        # True
+simplified = ratio.simplify()
+
+# Division always returns EternalRatio, never raises ZeroDivisionError
+ratio = Operations.compensated_divide(a, b)
+
+# High-level Compensator returns AbsoluteValue directly (no tuples)
+comp = Compensator()
+result = comp.compensate_addition(a, b)        # AbsoluteValue
+result = comp.compensate_multiplication(a, b)  # AbsoluteValue
+ratio  = comp.compensate_division(a, b)        # EternalRatio
+result = comp.compensate_power(a, 2.0)         # AbsoluteValue
 ```
 
-### Алгебраические структуры
+### Algebraic structures
 
 ```python
-from balansis.algebra.absolute_group import AbsoluteGroup
-from balansis.algebra.eternity_field import EternityField
+from balansis.algebra.absolute_group import AbsoluteGroup, GroupElement
 
-# Верификация групповых аксиом (A1-A5)
-group = AbsoluteGroup()
-members = [AbsoluteValue(magnitude=i, direction=1) for i in range(1, 4)]
-print(f"Замкнутость: {group.verify_closure(members)}")
-print(f"Ассоциативность: {group.verify_associativity(members)}")
-print(f"Идентичность: {group.has_identity()}")
-print(f"Обратные элементы: {group.verify_inverses(members)}")
+# Infinite additive group — identity is ABSOLUTE
+add_group = AbsoluteGroup.additive_group()
 
-# Верификация полевых аксиом (E1-E4, S1-S3)
-field = EternityField()
-ratios = [EternalRatio(AbsoluteValue(magnitude=i, direction=1),
-                       AbsoluteValue(magnitude=j, direction=1))
-          for i, j in [(1, 2), (3, 4), (5, 6)]]
-print(f"Дистрибутивность: {field.verify_distributivity(ratios)}")
+# Infinite multiplicative group — identity is UNIT_POSITIVE
+mul_group = AbsoluteGroup.multiplicative_group()
+
+# Finite cyclic group of given order
+cyc_group = AbsoluteGroup.finite_cyclic_group(order=6)
+
+elem_a = GroupElement(value=AbsoluteValue(magnitude=2.0, direction=1))
+elem_b = GroupElement(value=AbsoluteValue(magnitude=3.0, direction=1))
+
+result   = add_group.operate(elem_a, elem_b)
+identity = add_group.identity_element()
+inverse  = add_group.inverse_element(elem_a)
+print(add_group.is_abelian())  # True
+print(cyc_group.order())       # 6
 ```
 
-### Компенсированная арифметика
+### Linear algebra with ACT compensation
 
 ```python
-from balansis.logic.compensator import Compensator
+from balansis.linalg.gemm import matmul
+from balansis.linalg.qr import qr_decompose
+from balansis.linalg.svd import svd
 
-compensator = Compensator(precision_threshold=1e-15)
+# Matrices are List[List[AbsoluteValue]]
+A = [[AbsoluteValue(1.0, 1), AbsoluteValue(2.0, 1)],
+     [AbsoluteValue(3.0, 1), AbsoluteValue(4.0, 1)]]
 
-values = [AbsoluteValue(magnitude=0.1, direction=1),
-          AbsoluteValue(magnitude=0.2, direction=1),
-          AbsoluteValue(magnitude=0.3, direction=-1)]
+B = [[AbsoluteValue(5.0, 1), AbsoluteValue(6.0, 1)],
+     [AbsoluteValue(7.0, 1), AbsoluteValue(8.0, 1)]]
 
-# Kahan-компенсированная сумма
-stable_sum = compensator.sequence_sum(values)
-print(f"Стабильная сумма: {stable_sum}")
+C        = matmul(A, B)     # List[List[AbsoluteValue]]
+Q, R     = qr_decompose(A)  # Gram-Schmidt QR decomposition
+U, S, Vt = svd(A)           # SVD (requires numpy)
 ```
 
-### Линейная алгебра
+### Finance ledger with exact cancellation
 
 ```python
-from balansis.linalg.gemm import compensated_gemm
-from balansis.linalg.svd import act_svd
-from balansis.linalg.qr import householder_qr
+from balansis.finance.ledger import Ledger
+from decimal import Decimal
 
-# ACT-компенсированное матричное умножение
-C, compensation_matrix = compensated_gemm(A, B)
+ledger = Ledger()
+ledger.post_entry("assets",   Decimal("1000.00"), "initial deposit")
+ledger.post_entry("assets",   Decimal("500.00"),  "additional funding")
+ledger.transfer("assets", "expenses", Decimal("250.00"), "vendor payment")
 
-# SVD с защитой от числовых нестабильностей (Golub-Kahan + QR)
-U, S, Vt = act_svd(matrix)
-
-# QR-разложение (Householder / Givens / Gram-Schmidt)
-Q, R = householder_qr(matrix)
-```
-
-### ML-оптимизатор
-
-```python
-from balansis.ml.optimizer import EternalOptimizer, AdaptiveEternalOptimizer
-
-# Базовый оптимизатор с ACT-масштабированием learning rate
-optimizer = EternalOptimizer(learning_rate=0.01)
-
-# Adam-подобный с ACT scaling
-adaptive_opt = AdaptiveEternalOptimizer(lr=0.001, beta1=0.9, beta2=0.999)
-
-# PyTorch-совместимый (torch.optim subclass)
-from balansis.ml.optimizer import EternalTorchOptimizer
-torch_opt = EternalTorchOptimizer(model.parameters(), lr=0.001)
+total = ledger.balance()                   # AbsoluteValue — global balance
+assets = ledger.account_balance("assets")  # AbsoluteValue — per-account balance
 ```
 
 ---
 
-## Структура проекта
+## Module Overview
 
-```
-balansis/
-├── balansis/                    # Основная библиотека
-│   ├── core/
-│   │   ├── absolute.py          # AbsoluteValue (Pydantic frozen=True)
-│   │   ├── eternity.py          # EternalRatio
-│   │   └── operations.py        # Operations: compensated_add/mul/div/pow
-│   ├── algebra/
-│   │   ├── absolute_group.py    # AbsoluteGroup (аксиомы A1-A5)
-│   │   └── eternity_field.py    # EternityField (аксиомы E1-E4, S1-S3)
-│   ├── logic/
-│   │   └── compensator.py       # Compensator: sequence_sum, sequence_product
-│   ├── linalg/
-│   │   ├── gemm.py              # ACT-компенсированный GEMM
-│   │   ├── svd.py               # Golub-Kahan SVD + QR fallback
-│   │   └── qr.py                # Householder / Givens / Gram-Schmidt
-│   ├── ml/
-│   │   └── optimizer.py         # EternalOptimizer, AdaptiveEternalOptimizer, EternalTorchOptimizer
-│   ├── finance/
-│   │   └── ledger.py            # Бухгалтерская книга с точной ACT-компенсацией
-│   ├── sets/
-│   │   ├── eternal_set.py       # Бесконечные zero-sum множества
-│   │   ├── generators.py        # Генераторы элементов
-│   │   └── resolver.py          # Разрешение конфликтов
-│   ├── memory/
-│   │   └── arena.py             # Пул значений (value pooling)
-│   ├── utils/
-│   │   ├── safe.py              # Безопасные операции с проверками
-│   │   └── plot.py              # Визуализация
-│   ├── numpy_integration.py     # Векторизованные ACT-операции для NumPy
-│   ├── vectorized.py            # Батчевые операции
-│   ├── pandas_ext.py            # Расширение pandas (dtype + accessors)
-│   └── arrow_integration.py     # Apache Arrow совместимость
-├── tnsim/                       # Zero-Sum Infinite Sets симулятор
-│   ├── api/                     # FastAPI REST API
-│   │   ├── routes/zerosum.py    # Эндпоинты операций с множествами
-│   │   └── main.py              # FastAPI приложение
-│   ├── core/
-│   │   ├── sets/                # ZeroSumInfiniteSet реализация
-│   │   ├── operations/          # Параллельные операции (parallel_tnsim)
-│   │   └── cache/               # Redis кэш (tnsim_cache)
-│   ├── database/                # PostgreSQL персистентность
-│   └── integrations/            # Интеграция с balansis
-├── formal/                      # Lean4 формальные доказательства
-│   ├── BalansisFormal/
-│   │   ├── Direction.lean       # Тип Direction: Pos | Neg (13 теорем)
-│   │   ├── AbsoluteValue.lean   # AbsoluteValue над ℝ, аксиомы A1-A5
-│   │   ├── EternalRatio.lean    # EternalRatio, аксиомы E1-E4
-│   │   └── Algebra.lean         # Кросс-структурные аксиомы S1-S3
-│   └── BalansisFormal.lean      # Корневой импорт
-├── tests/                       # Тестовый набор (95%+ coverage)
-├── benchmarks/                  # Бенчмарки vs IEEE 754 и Kahan
-├── examples/                    # Jupyter notebooks
-└── docs/                        # Теоретическая документация
-```
+| Module | Import path | Description |
+|--------|-------------|-------------|
+| Core types | `balansis` | `AbsoluteValue`, `EternalRatio`, `ABSOLUTE`, `UNIT_POSITIVE`, `UNIT_NEGATIVE`, `B` |
+| Operations | `balansis` | `Operations` — compensated arithmetic returning `(result, comp)` tuples |
+| Compensator | `balansis` | `Compensator` — high-level engine returning `AbsoluteValue` directly |
+| Algebra | `balansis.algebra.absolute_group` | `AbsoluteGroup`, `GroupElement` — group theory (axioms A1-A5) |
+| Algebra | `balansis.algebra.eternity_field` | `EternityField`, `FieldElement` — field theory (axioms E1-E4, S1-S3) |
+| Linear algebra | `balansis.linalg.gemm` | `matmul` — ACT-compensated matrix multiplication |
+| Linear algebra | `balansis.linalg.qr` | `qr_decompose` — Gram-Schmidt QR decomposition |
+| Linear algebra | `balansis.linalg.svd` | `svd` — Golub-Kahan SVD with NumPy fallback |
+| ML optimizer | `balansis.ml.optimizer` | `EternalOptimizer`, `EternalTorchOptimizer` (PyTorch subclass) |
+| Sets | `balansis.sets.eternal_set` | `EternalSet` — zero-sum infinite sets |
+| Sets | `balansis.sets.generators` | `harmonic_generator`, `grandis_generator` |
+| Sets | `balansis.sets.resolver` | `global_compensate`, `verify_zero_sum`, `stream_compensate` |
+| Finance | `balansis.finance.ledger` | `Ledger` — double-entry bookkeeping with ACT compensation |
+| NumPy | `balansis.numpy_integration` | `to_numpy`, `from_numpy`, `add_arrays` — vectorized bridge |
+| Vectorized | `balansis.vectorized` | `batch_add`, `batch_mul_scalar`, `batch_to_float` |
+| Arrow | `balansis.arrow_integration` | `to_table`, `from_table` — Apache Arrow integration (requires pyarrow) |
+| Pandas | `balansis.pandas_ext` | `AbsoluteValueDtype`, `AbsoluteArray` — pandas extension type (requires pandas) |
+| Memory | `balansis.memory.arena` | `AbsoluteArena` — value pool / allocation cache |
 
 ---
 
-## Формальная верификация (Lean4)
+## Formal Verification
 
-Версия 0.2.0 включает полную Lean4-формализацию ACT с использованием Mathlib v4.28.0. **Все 12 аксиом доказаны — 0 sorry, 0 axioms, 0 ошибок.**
+Version 0.2.0 ships a complete Lean4 formalization of ACT using Mathlib v4.28.0. All 12 axioms are machine-checked — **0 `sorry`, 0 errors, 0 admitted axioms**.
 
-### Доказанные аксиомы
+| Group | Lean4 file | Proven axioms |
+|-------|-----------|---------------|
+| AbsoluteGroup | `BalansisFormal/AbsoluteValue.lean` | A1: `add_absolute_right`, A2: `add_comm`, A3: `add_assoc`, A4: `add_inverse`, A5: `add_cancellation` |
+| EternityField | `BalansisFormal/EternalRatio.lean` | E1: `mul_identity`, E2: `mul_comm`, E3: `mul_assoc`, E4: `mul_inverse` |
+| Cross-structure | `BalansisFormal/Algebra.lean` | S1: `s1_distributivity`, S2: `s2_mul_inverse`, S3: `s3_commutativity_with_add` |
+| Direction | `BalansisFormal/Direction.lean` | 13 theorems: `neg_ne_pos`, `double_neg`, `mul_same`, `mul_diff`, and more |
 
-| Группа | Файл | Аксиомы |
-|--------|------|---------|
-| AbsoluteGroup | `AbsoluteValue.lean` | A1: add_absolute_right, A2: add_comm, A3: add_assoc, A4: add_inverse, A5: add_cancellation |
-| EternityField | `EternalRatio.lean` | E1: mul_identity, E2: mul_comm, E3: mul_assoc, E4: mul_inverse |
-| Cross-structure | `Algebra.lean` | S1: s1_distributivity, S2: s2_mul_inverse, S3: s3_commutativity_with_add |
-| Direction | `Direction.lean` | neg_ne_pos, double_neg, mul_same, mul_diff (13 теорем) |
-
-### toReal bridges
+The proofs include `toReal` bridge lemmas connecting ACT types to `ℝ`:
 
 - `AbsoluteValue.toReal`: `toReal (mk m d) = m.toReal * d.toReal`
-- `toReal_injective`: структурное равенство из вещественного равенства
-- `EternalRatio.mul_toReal`: bridge-доказательство умножения
+- `toReal_injective`: structural equality follows from real-number equality
+- `EternalRatio.mul_toReal`: multiplication bridge
+
+To verify locally:
 
 ```bash
 cd formal && lake build
@@ -240,13 +219,13 @@ cd formal && lake build
 
 ---
 
-## Тестирование
+## Testing
 
 ```bash
-# Все тесты с покрытием (Coverage >= 95% enforced)
+# Run full test suite with coverage enforcement (>= 95% required)
 poetry run pytest
 
-# Конкретные модули
+# Run specific modules
 poetry run pytest tests/test_absolute.py -v
 poetry run pytest tests/test_operations.py -v
 poetry run pytest tests/test_algebra.py -v
@@ -254,137 +233,47 @@ poetry run pytest tests/test_numpy_integration.py -v
 poetry run pytest tests/test_finance.py -v
 ```
 
-### Качество кода
+Code quality gates:
 
 ```bash
-poetry run mypy balansis/      # строгая типизация (все опции strict)
+poetry run mypy balansis/        # strict type checking
 poetry run black balansis/ tests/
 poetry run isort balansis/ tests/
 poetry run flake8 balansis/
 poetry run pre-commit run --all-files
 ```
 
-**Конфигурация покрытия** (pyproject.toml):
-- `--cov-fail-under=95` — CI падает если coverage < 95%
-- `omit`: тесты, examples, setup.py
-
----
-
-## Применение
-
-### AI/ML
-ACT-компенсированная арифметика для стабильного обучения нейросетей:
-- MagicBrain: инициализация весов SNN, правила STDP-пластичности, калибровка порогов
-- Любые задачи, где важна численная стабильность при длительном обучении
-
-### Финансовые вычисления
-`finance/ledger.py` реализует бухгалтерскую книгу с идеальной компенсацией при сложении противоположных значений — без накопленных ошибок округления.
-
-### Научные вычисления
-Линейная алгебра с ACT: матричное умножение, SVD, QR-разложение — каждая операция отслеживает накопленную компенсацию.
-
-### Теория множеств
-`sets/eternal_set.py` — бесконечные zero-sum множества для математических исследований. `tnsim/` — полноценный симулятор с REST API и PostgreSQL.
+The CI configuration enforces `--cov-fail-under=95` — the build fails if coverage drops below 95%.
 
 ---
 
 ## tnsim: Zero-Sum Infinite Sets Simulator
 
-Отдельный модуль для работы с бесконечными zero-sum множествами:
+`tnsim/` is a standalone FastAPI service for experimenting with zero-sum infinite sets. It is **not included in the pip package** and must be run from the repository.
 
 ```bash
-# Запуск API
 uvicorn tnsim.api.main:app --port 8010
 ```
 
-| Компонент | Описание |
-|-----------|---------|
-| `ZeroSumInfiniteSet` | Математическая реализация zero-sum множеств |
-| `parallel_tnsim` | Параллельные операции над множествами |
-| `tnsim_cache` | Redis-кэш для результатов операций |
-| REST API | FastAPI эндпоинты для управления множествами |
-| PostgreSQL | Персистентность состояния множеств |
+| Component | Description |
+|-----------|-------------|
+| `ZeroSumInfiniteSet` | Mathematical implementation of zero-sum infinite sets |
+| `parallel_tnsim` | Parallel set operations |
+| `tnsim_cache` | Redis-backed result cache |
+| REST API | FastAPI endpoints for set management |
+| PostgreSQL | Persistent set state storage |
 
 ---
 
-## Статистика
+## License
 
-| Метрика | Значение |
-|---------|----------|
-| Версия | 0.2.0 (Lean4 Formal Verification Edition) |
-| Python | 3.10, 3.11, 3.12 |
-| Лицензия | MIT (non-commercial) / Commercial |
-| Автор | Tikhonov Andrey |
-| Строк кода | ~7,552 (33 модуля) |
-| Тестовых файлов | 22 |
-| Покрытие | 95%+ (enforced в CI) |
-| Lean4 аксиом | 12 (0 sorry, 0 errors, 0 axioms) |
-| Lean4 теорем | 13+ (Direction) + 5 (AbsoluteValue) + 4 (EternalRatio) + 3 (Algebra) |
-| Математических операций | 45+ на AbsoluteValue |
-| MAGIC Level | 1 (MetaBalansis) |
+Balansis uses **dual licensing**:
 
----
-
-## Место в MAGIC Ecosystem
-
-```
-Level 4 (MetaKnowledge): KnowledgeBaseAI
-Level 3 (MetaAgent):     xteam-agents
-Level 2 (MetaBrain):     MagicBrain       <- использует ACT для весов SNN
-Level 1 (MetaBalansis):  Balansis         <- математическое основание (этот проект)
-```
-
-Balansis предоставляет математически стабильную основу для всего MAGIC стека. MagicBrain использует ACT через `act_backend.py` для компенсированного обновления весов нейронной сети.
-
----
-
-## Документация
-
-- [docs/theory/act_whitepaper.md](docs/theory/act_whitepaper.md) — формальная спецификация и аксиоматика ACT
-- [docs/theory/algebraic_proofs.md](docs/theory/algebraic_proofs.md) — алгебраические доказательства
-- [docs/guide/precision_and_stability.md](docs/guide/precision_and_stability.md) — практическое руководство с бенчмарками
-- [formal/](formal/) — Lean4 машинно-проверенные доказательства
-- [examples/](examples/) — Jupyter notebooks с примерами
-
----
-
-## Roadmap
-
-### v0.3.0
-- [ ] Полный ACT benchmark suite (vs IEEE 754, Kahan summation, Python Decimal)
-- [ ] Расширение linalg: Cholesky, LU, eigendecomposition
-- [ ] Bandit, codespell, interrogate в pre-commit pipeline
-
-### v0.5.0 (Phase 8 target)
-- [ ] Stable API с гарантиями совместимости
-- [ ] LaTeX paper для arXiv
-- [ ] Полная документация sphinx + ReadTheDocs
-
----
-
-## Contributing
-
-1. Fork репозиторий
-2. Создайте feature branch
-3. Добавьте тесты (coverage >= 95% обязательно)
-4. `poetry run pre-commit run --all-files`
-5. Откройте Pull Request
-
-**Code style**: Black + isort, mypy strict, docstrings в Google style, все тесты должны проходить.
-
----
-
-## Лицензия
-
-**Двойное лицензирование (Dual Licensing):**
-
-- **MIT License** ([LICENSE](LICENSE)) — для некоммерческого использования: исследования, обучение, личные проекты, proof-of-concept.
-- **Commercial License** ([COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md)) — для коммерческого использования (SaaS, продакшн-деплой, интеграция в коммерческие продукты).
+- **MIT License** ([LICENSE](LICENSE)) — free for non-commercial use: research, education, personal projects, proof-of-concept work.
+- **Commercial License** ([COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md)) — required for commercial use: SaaS products, production deployments, integration into commercial software.
 
 Copyright (c) 2024-2026 Tikhonov Andrey. All rights reserved.
 
 ---
 
-**Balansis — математически стабильное основание для вычислений**
-
-Часть [StudyNinja-Eco](https://github.com/XTeam-Pro/StudyNinja-Eco) | MAGIC Level 1: MetaBalansis
+Balansis is MAGIC Level 1 (MetaBalansis) in the [StudyNinja-Eco](https://github.com/XTeam-Pro/StudyNinja-Eco) ecosystem — the mathematical foundation on which higher AGI layers are built.
