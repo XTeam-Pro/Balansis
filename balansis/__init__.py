@@ -32,7 +32,7 @@ from balansis.sets.resolver import global_compensate
 from balansis.sets.generators import harmonic_generator, grandis_generator
 # from balansis.utils.plot import PlotUtils  # Temporarily disabled
 
-__version__ = "0.2.0"
+__version__ = "0.5.0"
 __author__ = "Tikhonov Andrey"
 __email__ = "team@balansis.org"
 __license__ = "MIT"
