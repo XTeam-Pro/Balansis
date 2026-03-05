@@ -34,8 +34,8 @@ from balansis.sets.generators import harmonic_generator, grandis_generator
 
 __version__ = "0.5.0"
 __author__ = "Tikhonov Andrey"
-__email__ = "team@balansis.org"
-__license__ = "MIT"
+__email__ = "balansis@xteam.pro"
+__license__ = "MIT (non-commercial) / Commercial — see COMMERCIAL_LICENSE.md"
 
 # ACT Constants
 ABSOLUTE = AbsoluteValue(magnitude=0.0, direction=1)
