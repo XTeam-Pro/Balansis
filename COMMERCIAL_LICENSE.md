@@ -1,6 +1,8 @@
 # Commercial / Enterprise License (Dual Licensing) — Balansis
 
-Author: Andrey Tikhonov
+Copyright (c) 2024-2026 Tikhonov Andrey. All rights reserved.
+
+Author: Tikhonov Andrey
 
 This Commercial / Enterprise License (“Commercial License”) governs paid commercial use of Balansis and related modules, when such use is not permitted under the applicable community/open-core license.
 

@@ -1,3 +1,5 @@
+# Copyright (c) 2024-2026 Tikhonov Andrey. All rights reserved.
+# SPDX-License-Identifier: MIT (non-commercial) | Commercial use: see COMMERCIAL_LICENSE.md
 from decimal import Decimal, getcontext
 from typing import List, Dict, Tuple
 from balansis.core.absolute import AbsoluteValue

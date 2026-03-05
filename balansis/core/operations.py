@@ -1,3 +1,5 @@
+# Copyright (c) 2024-2026 Tikhonov Andrey. All rights reserved.
+# SPDX-License-Identifier: MIT (non-commercial) | Commercial use: see COMMERCIAL_LICENSE.md
 """Core operations module for Balansis library.
 
 This module implements compensated arithmetic operations that maintain mathematical
