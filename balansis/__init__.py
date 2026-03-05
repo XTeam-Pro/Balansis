@@ -33,8 +33,9 @@ from balansis.sets.generators import harmonic_generator, grandis_generator
 # from balansis.utils.plot import PlotUtils  # Temporarily disabled
 
 __version__ = "0.2.0"
-__author__ = "Balansis Team"
+__author__ = "Tikhonov Andrey"
 __email__ = "team@balansis.org"
+__license__ = "MIT"
 
 # ACT Constants
 ABSOLUTE = AbsoluteValue(magnitude=0.0, direction=1)
