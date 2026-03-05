@@ -2,7 +2,7 @@
 name = "balansis"
 version = "0.5.0"
 description = "Python library implementing Absolute Compensation Theory (ACT) — stable arithmetic replacing IEEE 754 zero and infinity"
-authors = ["Tikhonov Andrey <team@balansis.org>"]
+authors = ["Tikhonov Andrey <balansis@xteam.pro>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/XTeam-Pro/Balansis"
