@@ -1,3 +1,5 @@
+# Copyright (c) 2024-2026 Tikhonov Andrey. All rights reserved.
+# SPDX-License-Identifier: MIT (non-commercial) | Commercial use: see COMMERCIAL_LICENSE.md
 """Balansis: Python mathematical library implementing Absolute Compensation Theory (ACT).
 
 This library provides a novel framework replacing traditional zero and infinity
@@ -19,8 +21,6 @@ Example:
     >>> ratio = EternalRatio(numerator=a, denominator=b)
 """
 
-from typing import Union
-
 from balansis.core.absolute import AbsoluteValue
 from balansis.core.eternity import EternalRatio
 from balansis.core.operations import Operations
@@ -32,7 +32,7 @@ from balansis.sets.resolver import global_compensate
 from balansis.sets.generators import harmonic_generator, grandis_generator
 # from balansis.utils.plot import PlotUtils  # Temporarily disabled
 
-__version__ = "0.5.0"
+__version__ = "0.2.0"
 __author__ = "Balansis Team"
 __email__ = "team@balansis.org"
 
@@ -76,26 +76,8 @@ __all__ = [
     "ACT_STABILITY_THRESHOLD",
     "ACT_ABSOLUTE_THRESHOLD",
     "ACT_COMPENSATION_FACTOR",
-    "B",
 ]
-
-
-def B(value: Union[int, float, str, AbsoluteValue]) -> AbsoluteValue:
-    """Convert a numeric value to an AbsoluteValue.
-
-    Convenience constructor that accepts int, float, str, or AbsoluteValue
-    and returns an AbsoluteValue instance via AbsoluteValue.from_float().
-
-    Args:
-        value: The value to convert. Strings are first parsed as floats.
-
-    Returns:
-        AbsoluteValue representing the input value.
-
-    Raises:
-        TypeError: If value is not int, float, str, or AbsoluteValue.
-        ValueError: If string cannot be parsed as float.
-    """
+def B(value):
     if isinstance(value, (int, float)):
         return AbsoluteValue.from_float(float(value))
     if isinstance(value, str):

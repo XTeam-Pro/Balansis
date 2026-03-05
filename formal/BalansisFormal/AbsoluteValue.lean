@@ -21,6 +21,7 @@ structure AbsoluteValue where
   direction : Direction
   wf : magnitude = 0 → direction = .pos := by intro; rfl
 
+
 noncomputable section
 
 namespace AbsoluteValue

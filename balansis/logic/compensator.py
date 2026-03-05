@@ -1,3 +1,5 @@
+# Copyright (c) 2024-2026 Tikhonov Andrey. All rights reserved.
+# SPDX-License-Identifier: MIT (non-commercial) | Commercial use: see COMMERCIAL_LICENSE.md
 """Compensator engine for Balansis library.
 
 This module implements the core compensation engine that maintains mathematical
