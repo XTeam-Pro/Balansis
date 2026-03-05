@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "balansis"
-version = "0.5.0"
+version = "0.5.1"
 description = "Python library implementing Absolute Compensation Theory (ACT) — stable arithmetic replacing IEEE 754 zero and infinity"
 authors = ["Tikhonov Andrey <balansis@xteam.pro>"]
 license = "MIT"
