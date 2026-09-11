@@ -12,10 +12,20 @@ for public Balansis claims surfaced in `README.md` and the canonical guides.
 - generator: `benchmarks/claim_closure_benchmarks.py`
 - machine-readable output: `benchmarks/results/claim_closure_baseline.json`
 
+From the repository root:
+
+```bash
+PYTHONPATH=. python benchmarks/claim_closure_benchmarks.py
+```
+
+The harness refuses an installed package outside this checkout. Its report binds
+the Python source fingerprint and Python/NumPy versions, so another editable
+installation cannot silently produce evidence for this source tree.
+
 ## Covered Scenarios
 
 - large-scale aggregation with cancellation
-- cancellation-sensitive addition path
+- exact cancellation of opposite represented operands, checked in both orders
 - finance zero-sum balancing
 - division contract with explicit denominator guard
 - extended division states for `finite`, `infinite`, and `indeterminate` runtime outcomes
@@ -47,6 +57,8 @@ At minimum, the artifact should show:
 - naive float accumulation loses the small residual in the documented large-aggregation case
 - Python built-in `sum()` may behave differently across versions and is therefore recorded separately from the naive loop baseline
 - Balansis preserves that residual through `Operations.sequence_sum`
+- equal opposite operands cancel to zero through `compensated_add`; no ULP is
+  invented to replace information rounded away before construction
 - the finance helper reaches structural additive identity on a balanced example
 - valid division returns an `EternalRatio`, while an `ABSOLUTE` denominator is rejected explicitly
 - the extended division path represents `finite / ABSOLUTE` as signed infinity

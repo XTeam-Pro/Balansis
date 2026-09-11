@@ -8,12 +8,17 @@ claims about stability and engineering tradeoffs are backed by runnable assets.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import platform
 import statistics
 import time
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
+
+import balansis
+import numpy as np
 
 from balansis import AbsoluteValue, Operations
 from balansis.core.eternity import SingularPolicy
@@ -85,10 +90,11 @@ def scenario_large_scale_aggregation() -> dict[str, object]:
 
 
 def scenario_cancellation_signal() -> dict[str, object]:
-    float_result = (1e16 + 1.0) - 1e16
+    float_result = 1e16 + (-1e16)
     left = AbsoluteValue.from_float(1e16)
     right = AbsoluteValue.from_float(-1e16)
     act_result, compensation = Operations.compensated_add(left, right)
+    reversed_result, _ = Operations.compensated_add(right, left)
 
     return {
         "scenario": "cancellation_signal",
@@ -98,8 +104,11 @@ def scenario_cancellation_signal() -> dict[str, object]:
         "balansis_direction": act_result.direction,
         "balansis_compensation": compensation,
         "result_is_absolute": act_result.is_absolute(),
+        "expected_exact": 0.0,
+        "reversed_result": reversed_result.to_float(),
+        "rounded_before_construction": (1e16 + 1.0) - 1e16,
         "timing": {
-            "float_expr": asdict(measure(lambda: (1e16 + 1.0) - 1e16)),
+            "float_expr": asdict(measure(lambda: 1e16 + (-1e16))),
             "balansis_compensated_add": asdict(
                 measure(lambda: Operations.compensated_add(left, right))
             ),
@@ -289,6 +298,15 @@ def scenario_pipeline_policy_propagation() -> dict[str, object]:
 
 
 def build_report() -> dict[str, object]:
+    if not Path(balansis.__file__).resolve().is_relative_to(ROOT / "balansis"):
+        raise RuntimeError(
+            "Benchmark imported Balansis outside this checkout. Run from the "
+            "repository root with PYTHONPATH=. python benchmarks/claim_closure_benchmarks.py"
+        )
+    source_hash = hashlib.sha256()
+    for source in sorted((ROOT / "balansis").rglob("*.py")):
+        source_hash.update(source.relative_to(ROOT).as_posix().encode() + b"\0")
+        source_hash.update(source.read_bytes() + b"\0")
     scenarios = [
         scenario_large_scale_aggregation(),
         scenario_cancellation_signal(),
@@ -300,7 +318,10 @@ def build_report() -> dict[str, object]:
     ]
     return {
         "artifact": "claim_closure_baseline",
-        "version": "1.0.0",
+        "version": "1.1.0",
+        "implementation_sha256": source_hash.hexdigest(),
+        "python_version": platform.python_version(),
+        "numpy_version": np.__version__,
         "scenarios": scenarios,
     }
 

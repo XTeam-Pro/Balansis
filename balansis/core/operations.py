@@ -57,31 +57,20 @@ class Operations:
                         compensation_factor: float = 1.0) -> CompensatedResult:
         """Perform compensated addition of two AbsoluteValues.
 
-        Detects near-cancellation when the operands are opposite in direction
-        and very close in magnitude (relative threshold). In that case the
-        residual ULP is preserved as a tiny positive magnitude with the
-        winning direction, so the result is never exactly Absolute when the
-        true mathematical difference is non-zero (which protects downstream
-        divisions and log operations from spurious singularities).
+        Opposite operands with equal represented magnitudes cancel to Absolute.
+        Distinct, nearly equal magnitudes retain their represented difference.
+        Information rounded away before construction cannot be recovered here.
+
+        The compensation factor is a diagnostic, not an additive correction or
+        a rigorous error bound. Exact cancellation retains the
+        legacy ``compensation_factor * STABILITY_FACTOR`` diagnostic; nonzero
+        near-cancellation scales it by the ratio of magnitude to difference.
         """
         # Detect catastrophic cancellation: opposite directions and close magnitudes.
-        # Operands that lie above the float64 representable-integer threshold (2^53 ~ 9e15)
-        # may be reported as equal by Python even when their true mathematical
-        # difference is non-zero. We preserve a ULP-scale residual to keep the
-        # result informative.
         if a.direction != b.direction and a.magnitude > 0 and b.magnitude > 0:
             larger = max(a.magnitude, b.magnitude)
             diff = abs(a.magnitude - b.magnitude)
             if a.magnitude == b.magnitude:
-                # If the operands were constructed from values large enough to
-                # lose precision (above 2^53), the float64 equality may hide a
-                # true 1-ULP difference. Preserve a residual so downstream code
-                # doesn't see a spurious Absolute.
-                if larger > 9.0e15:
-                    residual = math.ulp(larger)
-                    winner = a.direction
-                    return AbsoluteValue(magnitude=residual, direction=winner), \
-                        compensation_factor * (larger / residual)
                 return AbsoluteValue.absolute(), compensation_factor * Operations.STABILITY_FACTOR
             # Near-cancellation is only meaningful when both operands are far above
             # the compensation threshold. Otherwise we treat the result as Absolute.

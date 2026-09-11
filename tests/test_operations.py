@@ -1686,14 +1686,14 @@ class TestMissingOperationsCoverage:
         """Test compensated_add with near-cancellation scenario - lines 59-64"""
         # Create values that nearly cancel each other
         a = AbsoluteValue(magnitude=1e16, direction=1)
-        b = AbsoluteValue(magnitude=1e16 - 1, direction=-1)
+        b = AbsoluteValue(magnitude=math.nextafter(1e16, 0.0), direction=-1)
         
         result, compensation = Operations.compensated_add(a, b)
         
         # Should detect near-cancellation and apply compensation
         assert isinstance(result, AbsoluteValue)
         assert isinstance(compensation, float)
-        assert result.magnitude > 0  # Should not be exactly zero due to compensation
+        assert result.to_float() == 2.0  # The adjacent float differs by exactly two.
     
     def test_compensated_add_standard_addition(self):
         """Test compensated_add standard addition path - lines 71-75"""

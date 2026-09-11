@@ -48,7 +48,10 @@ Balansis was created to explore a stronger arithmetic interface for:
 ### 1. Large-Scale Aggregation
 
 ```python
-sum([1e16, 1.0, -1e16])  # IEEE 754 / Python float
+total = 0.0
+for value in [1e16, 1.0, -1e16]:
+    total += value
+total  # naive float accumulation
 # 0.0
 ```
 
@@ -81,11 +84,15 @@ from balansis import AbsoluteValue as Bv, Operations
 a = Bv.from_float(1e16)
 b = Bv.from_float(-1e16)
 result, compensation = Operations.compensated_add(a, b)
+# result.is_absolute() == True
 ```
 
-Why it matters: when precision loss is suspected at very large magnitudes,
-Balansis preserves an informative residual instead of always collapsing to a
-spurious exact zero.
+Equal represented magnitudes with opposite signs cancel exactly, including at
+large magnitudes. Balansis cannot recover the `1.0` already lost in
+`1e16 + 1.0` before construction. Keep separate terms and use `sequence_sum`
+when their small residual must survive. The compensation factor is a diagnostic,
+not a replacement value or a rigorous error bound. See
+[Precision and Stability](docs/guides/precision-and-stability.md).
 
 ### 3. Financial Cancellation
 
