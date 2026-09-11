@@ -25,6 +25,62 @@ def native_available() -> bool:
     return _kernels is not None and getattr(_kernels, "API_VERSION", None) == 1
 
 
+def native_dot_available() -> bool:
+    """Whether the installed optional extension supports exact dot products."""
+    return native_available() and callable(getattr(_kernels, "exact_dot", None))
+
+
+def _python_dot(a: NDArray[np.float64], b: NDArray[np.float64]) -> float:
+    """Integer reference: all finite binary64 products are multiples of 2^-2148."""
+    total = 0
+    for left, right in zip(a, b):
+        x, y = float(left), float(right)
+        if not math.isfinite(x) or not math.isfinite(y):
+            raise ValueError("dot_array requires finite values")
+        nx, dx = x.as_integer_ratio()
+        ny, dy = y.as_integer_ratio()
+        shift = 2148 - (dx.bit_length() - 1) - (dy.bit_length() - 1)
+        total += (nx * ny) << shift
+    # Integer true division rounds once, preserving negative underflow to -0.0.
+    return total / (1 << 2148)
+
+
+def dot_array(
+    a: ArrayLike,
+    b: ArrayLike,
+    *,
+    backend: Literal["auto", "python", "native"] = "auto",
+) -> float:
+    """Exact sum of represented float64 products, rounded once to nearest-even.
+
+    Real 1-D inputs must have equal lengths. Conversion to float64 may round
+    the inputs first. NaN/infinity raise ValueError; final rounded overflow
+    raises OverflowError. Products may exceed float64 range and cancel later.
+    The optional C kernel and integer Python reference use the same contract.
+    Contiguous native float64 inputs need no input copy. Exact zero is +0.0;
+    negative nonzero values rounding to zero produce -0.0.
+    """
+    if backend not in ("auto", "python", "native"):
+        raise ValueError("backend must be 'auto', 'python', or 'native'")
+    use_native = backend != "python" and native_dot_available()
+    if backend == "native" and not use_native:
+        raise RuntimeError(
+            "native dot backend unavailable; install ./native from source"
+        )
+    left, right = np.asarray(a), np.asarray(b)
+    if left.ndim != 1 or right.ndim != 1:
+        raise ValueError("dot_array requires one-dimensional arrays")
+    if left.size != right.size:
+        raise ValueError("dot_array requires equal lengths")
+    if left.dtype.kind not in "biuf" or right.dtype.kind not in "biuf":
+        raise TypeError("dot_array requires real numeric values")
+    left = np.ascontiguousarray(left, dtype=np.float64)
+    right = np.ascontiguousarray(right, dtype=np.float64)
+    if use_native and _kernels is not None:
+        return float(_kernels.exact_dot(left, right))
+    return _python_dot(left, right)
+
+
 def _python_sum(values: NDArray[np.float64]) -> tuple[float, float]:
     """Reference kernel with the same operation order and errors as C."""
     if values.size == 0:

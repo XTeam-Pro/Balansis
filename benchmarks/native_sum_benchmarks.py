@@ -29,6 +29,8 @@ NATIVE_SOURCES = [
     "pyproject.toml",
     "setup.py",
     "src/module.c",
+    "src/exact_dot.c",
+    "src/exact_dot.h",
     "src/neumaier.c",
     "src/neumaier.h",
 ]

@@ -103,26 +103,13 @@ def compensated_array_multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 def compensated_dot_product(a: np.ndarray, b: np.ndarray) -> float:
-    """Correctly rounded dot product (Ogita–Rump–Oishi Dot2).
+    """Exact finite-input dot product, rounded once to binary64.
 
-    A dot product loses precision in two places: each product ``a[i]*b[i]``
-    rounds, and the running sum accumulates error. Kahan/Neumaier summation
-    only fixes the second — for an ill-conditioned dot the *product* rounding
-    dominates, so summation compensation alone recovers nothing.
-
-    This implementation captures every product's exact rounding error with the
-    TwoProduct transform and sums the full set of high/low terms with a single
-    correct rounding (:func:`math.fsum`). The result is accurate to full
-    float64 precision regardless of the condition number, as long as the
-    individual products are finite — matching the whitepaper's stability claim
-    for accumulation-heavy workloads such as large sparse state vectors.
-
-    Args:
-        a: 1-D array (or any shape; will be ravelled), cast to float64.
-        b: Same shape as ``a``.
-
-    Returns:
-        Scalar dot product as Python float.
+    Inputs are cast to float64 and flattened; flattened lengths must match.
+    Finite products accumulate exactly using the optional C kernel or integer
+    Python reference. Individual products may overflow or underflow float64
+    without losing their contribution. Final rounded overflow raises
+    OverflowError. Nonfinite inputs retain NumPy propagation via ``dot2``.
     """
     return _dot2(a, b)
 

@@ -38,6 +38,8 @@ for name in [
     "pyproject.toml",
     "setup.py",
     "src/module.c",
+    "src/exact_dot.c",
+    "src/exact_dot.h",
     "src/neumaier.c",
     "src/neumaier.h",
 ]:
@@ -47,8 +49,8 @@ setup(
     ext_modules=[
         Extension(
             "_balansis_kernels",
-            ["src/module.c", "src/neumaier.c"],
-            depends=["src/neumaier.h"],
+            ["src/module.c", "src/neumaier.c", "src/exact_dot.c"],
+            depends=["src/neumaier.h", "src/exact_dot.h"],
             define_macros=[
                 ("BALANSIS_SOURCE_SHA256", '"' + source_hash.hexdigest() + '"')
             ],

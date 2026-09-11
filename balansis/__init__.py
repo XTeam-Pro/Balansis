@@ -37,7 +37,7 @@ from balansis.core.eternity import (
     SingularPolicy,
 )
 from balansis.core.operations import Operations
-from balansis.array import sum_array
+from balansis.array import dot_array, sum_array
 from balansis.logic.compensator import Compensator
 from balansis.algebra.absolute_group import AbsoluteGroup
 from balansis.algebra.eternity_field import EternityField
@@ -77,6 +77,7 @@ __all__ = [
     "SingularArithmeticEvent",
     "Operations",
     "sum_array",
+    "dot_array",
     "Compensator",
     "AbsoluteGroup",
     "EternityField",

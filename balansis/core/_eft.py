@@ -7,22 +7,12 @@
 #
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
-"""Error-free transformations (EFT) — the numerical primitives behind ACT.
+"""Classical floating-point transforms and exact finite-input dot products.
 
-These are the classical building blocks that make compensated arithmetic
-*actually* recover lost precision rather than merely tracking it:
-
-- ``two_sum(a, b)``     — Knuth (1969): ``a + b = s + e`` exactly, no FMA needed.
-- ``two_product(a, b)`` — Dekker (1971): ``a * b = p + e`` exactly, via splitting.
-- ``dot2(a, b)``        — Ogita–Rump–Oishi (2005): a dot product accumulated
-  through TwoProduct + exact summation, giving a *correctly rounded* result
-  even for catastrophically ill-conditioned inputs.
-
-``dot2`` is the honest core of the whitepaper's accuracy claims: the naive
-``sum(a[i] * b[i])`` loses precision in two places — each product rounds, and
-the running sum accumulates error. Kahan summation only fixes the second.
-TwoProduct captures the per-product rounding error, and ``math.fsum`` sums the
-full set of high/low terms with a single correct rounding.
+TwoSum and Dekker TwoProduct are floating-point error transforms whose exactness
+requires suitable range conditions; splitting can overflow and product residuals
+can underflow. ``dot2`` uses the separate exact integer accumulator through
+``dot_array`` rather than relying on those transforms for full-range inputs.
 """
 from __future__ import annotations
 
@@ -73,24 +63,22 @@ def two_product_arr(a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarra
 
 
 def dot2(a, b) -> float:
-    """Correctly rounded dot product (Ogita–Rump–Oishi Dot2 via exact summation).
+    """Flatten inputs and compute an exact finite binary64 dot product.
 
-    Captures every product's rounding error with TwoProduct, then sums the full
-    set of high and low parts with :func:`math.fsum` (a single correct rounding
-    of the exact dot product). Delivers full float64 accuracy regardless of the
-    condition number, as long as the individual products are finite.
+    Finite values use ``dot_array`` with its native or integer Python backend.
+    Nonfinite values retain the legacy NumPy propagation path. Length mismatch
+    is rejected instead of broadcasting. Final rounded overflow raises
+    OverflowError; overflowing products that cancel are handled exactly.
     """
+    from balansis.array import dot_array
+
     a = np.asarray(a, dtype=np.float64).ravel()
     b = np.asarray(b, dtype=np.float64).ravel()
-    if a.size == 0:
-        return 0.0
-    p, e = two_product_arr(a, b)
-    finite = np.isfinite(p) & np.isfinite(e)
-    if not finite.all():
-        # Overflow/underflow in a product: fall back to the plain dot for those
-        # positions so we never return NaN from an otherwise-finite computation.
+    if a.size != b.size:
+        raise ValueError("dot2 requires equal lengths")
+    if not np.isfinite(a).all() or not np.isfinite(b).all():
         return float(np.dot(a, b))
-    return math.fsum(np.concatenate([p, e]))
+    return dot_array(a, b)
 
 
 def comp_sum(values) -> float:

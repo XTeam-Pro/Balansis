@@ -222,6 +222,27 @@ NaN/infinity and intermediate overflow are rejected. Existing object-based
 See [native build and numerical contract](native/README.md) and
 [reproducible performance comparison](docs/benchmarks/native-sum.md).
 
+### Exact dot products
+
+```python
+from balansis import dot_array
+
+assert dot_array([1e308, 1e308], [2.0, -2.0]) == 0.0
+```
+
+`dot_array(a, b, backend="auto")` sums the products of represented float64
+values exactly and rounds once to float64. Inputs are real, finite 1-D arrays
+of equal length. Final rounded overflow raises `OverflowError`. The optional
+native package version 0.2 supports this operation; otherwise the integer Python
+reference is used. That reference can be slower than the previous compensated
+algorithm, so acceleration requires installing the native extension.
+
+Existing `compensated_dot_product` and Jacobi SVD use this path through `dot2`.
+They keep their flattened-input interface and legacy NumPy propagation for
+nonfinite inputs. Mismatched flattened lengths now raise `ValueError` instead
+of allowing unintended broadcasting. See the
+[exact-dot implementation and measurements](docs/benchmarks/native-dot.md).
+
 ## Documentation By Audience
 
 | Audience | Start here | Why |
