@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "balansis-kernels"
+version = "0.1.0"
+description = "Optional strict floating-point C kernels for Balansis"
+requires-python = ">=3.10"
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE", "NOTICE", "LICENSING.md", "COMMERCIAL_LICENSE.md", "ORDER_FORM_TEMPLATE.md", "SECURITY.md"]
+authors = [{name = "Andrey Tikhonov", email = "andrew@xteam.pro"}]
+
+[tool.setuptools]
+packages = []

@@ -194,6 +194,34 @@ Continue with:
 
 ---
 
+## Batch summation with an optional C kernel
+
+```python
+import numpy as np
+from balansis import sum_array
+
+values = np.array([1e16, 1.0, -1e16], dtype=np.float64)
+result, diagnostic = sum_array(values)
+assert result.to_float() == 1.0
+```
+
+`sum_array` uses sequential Neumaier compensation. It accepts one-dimensional
+real numeric arrays and returns `(AbsoluteValue, diagnostic)` with the same
+diagnostic scaling as `Operations.sequence_sum`. The diagnostic is not an error
+bound; compensation does not guarantee correct rounding for every input.
+
+The Python implementation is always available. To enable the optional C kernel,
+install it from this source checkout with `python -m pip install ./native`.
+`backend="native"` requires that kernel; `backend="python"` selects the reference;
+the default `backend="auto"` selects an available compatible kernel. A contiguous
+native `float64` NumPy array is passed without an input copy. Other real numeric
+inputs are converted, which can round integers or higher-precision values.
+NaN/infinity and intermediate overflow are rejected. Existing object-based
+`Operations.sequence_sum` behaviour is unchanged.
+
+See [native build and numerical contract](native/README.md) and
+[reproducible performance comparison](docs/benchmarks/native-sum.md).
+
 ## Documentation By Audience
 
 | Audience | Start here | Why |
