@@ -1,16 +1,17 @@
 """Main FastAPI application for TNSIM."""
 
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import logging
-from typing import Dict, Any
+from contextlib import asynccontextmanager
+from typing import Any, Dict
 
-from .routes import zerosum_router
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from .. import __version__ as TNSIM_VERSION
+from ..core import get_global_cache, get_global_parallel_processor
 from ..database.connection import close_database_connection
 from ..database.repository import InfiniteSetRepository
-from ..core import get_global_cache, get_global_parallel_processor
+from .routes import zerosum_router
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
@@ -22,17 +23,18 @@ async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     # Initialization on startup
     logger.info("Starting TNSIM API...")
-    
+
     # Initialize global components
     cache = get_global_cache()
     parallel_processor = get_global_parallel_processor()
-    
+
     logger.info("Cache and parallel processor initialization completed")
-    
+
     yield
-    
+
     # Cleanup on shutdown
     logger.info("Shutting down TNSIM API...")
+    parallel_processor.shutdown()
     await close_database_connection()
     logger.info("TNSIM API stopped")
 
@@ -42,7 +44,7 @@ app = FastAPI(
     title="TNSIM API",
     description="API for Theory of Null Sum Infinite Sets",
     version=TNSIM_VERSION,
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # CORS configuration
@@ -65,7 +67,7 @@ async def root() -> Dict[str, Any]:
         "message": "TNSIM API - Theory of Null Sum Infinite Sets",
         "version": TNSIM_VERSION,
         "docs": "/docs",
-        "redoc": "/redoc"
+        "redoc": "/redoc",
     }
 
 
@@ -85,10 +87,7 @@ async def health_check() -> Dict[str, str]:
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "api.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        "api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
     )

@@ -1,3 +1,5 @@
+from typing import List, Literal, cast
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -8,9 +10,9 @@
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
 import numpy as np
-from typing import List
-from balansis.core.absolute import AbsoluteValue
+
 from balansis.core._eft import dot2 as _dot2
+from balansis.core.absolute import AbsoluteValue
 
 absolute_struct_dtype = np.dtype([("magnitude", np.float64), ("direction", np.int8)])
 
@@ -31,7 +33,7 @@ def from_numpy(arr: np.ndarray) -> List[AbsoluteValue]:
     for i in range(arr.shape[0]):
         m = float(arr["magnitude"][i])
         d = int(arr["direction"][i])
-        out.append(AbsoluteValue(magnitude=m, direction=d))
+        out.append(AbsoluteValue(magnitude=m, direction=cast(Literal[-1, 1], d)))
     return out
 
 
@@ -167,4 +169,4 @@ def compensated_softmax(logits: np.ndarray) -> np.ndarray:
         c = (t - s) - y
         s = t
     # After max-shift, at least one exp_val equals 1.0, so s >= 1 always holds.
-    return (exp_vals / s).astype(np.float64)
+    return np.asarray(exp_vals / s, dtype=np.float64)

@@ -7,28 +7,12 @@
 #
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
-"""Balansis: Python mathematical library implementing Absolute Compensation Theory (ACT).
+"""Compensated arithmetic, numerical arrays, algebra and singular ratios."""
 
-This library provides a novel framework replacing traditional zero and infinity
-with Absolute and Eternity concepts for enhanced computational stability.
-
-Core Components:
-    - AbsoluteValue: Values with magnitude and direction
-    - EternalRatio: Structural finite ratios between AbsoluteValues
-    - ExtendedRatio: Ratios with finite / infinite / indeterminate semantics
-    - Operations: Compensated arithmetic operations
-    - Compensator: Balance and stability calculations
-    - AbsoluteGroup: Group theory for Absolute values
-    - EternityField: Field operations for eternal ratios
-
-Example:
-    >>> from balansis import AbsoluteValue, EternalRatio
-    >>> a = AbsoluteValue(magnitude=5.0, direction=1)
-    >>> b = AbsoluteValue(magnitude=3.0, direction=-1)
-    >>> result = a + b  # Compensated addition
-    >>> ratio = EternalRatio(numerator=a, denominator=b)
-"""
-
+from balansis.algebra.absolute_group import AbsoluteGroup
+from balansis.algebra.eternity_field import EternityField
+from balansis.array import dot_array, gram_pair, sum_array
+from balansis.compat import CompensatedMatMul, CompensatedSum, StableSoftmax
 from balansis.core.absolute import AbsoluteValue
 from balansis.core.eternity import (
     EternalRatio,
@@ -37,20 +21,17 @@ from balansis.core.eternity import (
     SingularPolicy,
 )
 from balansis.core.operations import Operations
-from balansis.array import dot_array, gram_pair, sum_array
 from balansis.logic.compensator import Compensator
-from balansis.algebra.absolute_group import AbsoluteGroup
-from balansis.algebra.eternity_field import EternityField
 from balansis.sets.eternal_set import EternalSet
+from balansis.sets.generators import grandis_generator, harmonic_generator
 from balansis.sets.resolver import global_compensate
-from balansis.sets.generators import harmonic_generator, grandis_generator
-from balansis.compat import CompensatedSum, StableSoftmax, CompensatedMatMul
-# from balansis.utils.plot import PlotUtils  # Temporarily disabled
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __author__ = "Andrey Tikhonov (XTeam-Pro)"
 __email__ = "andrew@xteam.pro"
-__license__ = "AGPL-3.0 / Commercial — see LICENSE, LICENSING.md, and COMMERCIAL_LICENSE.md"
+__license__ = (
+    "AGPL-3.0 / Commercial — see LICENSE, LICENSING.md, and COMMERCIAL_LICENSE.md"
+)
 
 # ACT Constants
 ABSOLUTE = AbsoluteValue(magnitude=0.0, direction=1)
@@ -89,7 +70,7 @@ __all__ = [
     "CompensatedSum",
     "StableSoftmax",
     "CompensatedMatMul",
-    # "PlotUtils",  # Temporarily disabled
+    "B",
     "ABSOLUTE",
     "UNIT_POSITIVE",
     "UNIT_NEGATIVE",
@@ -102,7 +83,9 @@ __all__ = [
     "ACT_ABSOLUTE_THRESHOLD",
     "ACT_COMPENSATION_FACTOR",
 ]
-def B(value):
+
+
+def B(value: int | float | str | AbsoluteValue) -> AbsoluteValue:
     if isinstance(value, (int, float)):
         return AbsoluteValue.from_float(float(value))
     if isinstance(value, str):

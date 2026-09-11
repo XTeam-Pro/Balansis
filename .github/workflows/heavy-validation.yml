@@ -174,12 +174,12 @@ jobs:
       - name: Install the package
         run: python -m pip install --disable-pip-version-check -e .
 
-      - name: Generate the known-gap API documentation report
-        continue-on-error: true
+      - name: Validate API documentation
         run: |
           mkdir -p documentation-results
           python scripts/validate_api_docs.py \
             --output documentation-results/api-documentation.json
+          python scripts/validate_examples.py
 
       - name: Upload documentation report
         if: always()

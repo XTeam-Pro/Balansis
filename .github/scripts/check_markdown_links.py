@@ -23,10 +23,8 @@ SKIP_PARTS = {
     "build",
     "dist",
     "htmlcov",
+    "target",
 }
-# This legacy page has two pre-existing missing targets. It is still checked
-# when changed explicitly, so new work cannot silently inherit the exception.
-KNOWN_BASELINE_EXCLUSIONS = {"tnsim/README.md"}
 
 
 def _changed_markdown(base: str, head: str) -> list[str]:
@@ -58,13 +56,7 @@ def _markdown_files(requested: list[str], *, changed_only: bool) -> list[Path]:
     return sorted(
         path
         for path in files
-        if path.is_file()
-        and not any(part in SKIP_PARTS for part in path.parts)
-        and "docs/archive/" not in path.relative_to(ROOT).as_posix()
-        and (
-            changed_only
-            or path.relative_to(ROOT).as_posix() not in KNOWN_BASELINE_EXCLUSIONS
-        )
+        if path.is_file() and not any(part in SKIP_PARTS for part in path.parts)
     )
 
 

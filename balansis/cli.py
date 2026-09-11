@@ -16,6 +16,7 @@ import json
 from typing import Sequence
 
 from balansis import __version__
+from balansis.array import native_available, native_dot_available, native_gram_available
 from balansis.core.absolute import AbsoluteValue
 from balansis.core.operations import Operations
 
@@ -25,16 +26,24 @@ def build_parser() -> argparse.ArgumentParser:
         prog="balansis",
         description="Balansis command-line utilities for release smoke checks and basic ACT operations.",
     )
-    parser.add_argument("--version", action="version", version=f"balansis {__version__}")
+    parser.add_argument(
+        "--version", action="version", version=f"balansis {__version__}"
+    )
 
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("doctor", help="Run a minimal import and operation smoke check")
+    subparsers.add_parser(
+        "doctor", help="Run a minimal import and operation smoke check"
+    )
 
-    add_parser = subparsers.add_parser("add", help="Compensated addition of two finite numbers")
+    add_parser = subparsers.add_parser(
+        "add", help="Compensated addition of two finite numbers"
+    )
     add_parser.add_argument("left", type=float)
     add_parser.add_argument("right", type=float)
-    add_parser.add_argument("--json", action="store_true", help="Emit a machine-readable JSON object")
+    add_parser.add_argument(
+        "--json", action="store_true", help="Emit a machine-readable JSON object"
+    )
 
     return parser
 
@@ -46,6 +55,11 @@ def run_doctor() -> int:
     payload = {
         "status": "ok",
         "version": __version__,
+        "native": {
+            "sum": native_available(),
+            "dot": native_dot_available(),
+            "gram": native_gram_available(),
+        },
         "operation": "compensated_add",
         "result": result.to_float(),
         "compensation": compensation,

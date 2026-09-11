@@ -1,10 +1,14 @@
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro).
 # AGPL-3.0-only OR commercial license; see LICENSING.md.
 """Frozen pre-fusion Jacobi SVD from d2f4e143, for regression/benchmarks only."""
+
 import math
 from typing import Tuple
+
 import numpy as np
+
 from balansis.core._eft import dot2
+
 
 def _act_jacobi_svd(
     A: np.ndarray, tol: float = 1e-15, max_sweeps: int = 60

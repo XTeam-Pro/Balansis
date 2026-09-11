@@ -1,148 +1,41 @@
-"""Setup script for TNSIM (Theory of Zero Sum of Infinite Sets)."""
+"""Build the TNSIM distribution from its own package root."""
 
-from setuptools import setup, find_packages
-import os
+from pathlib import Path
 
-# Read README file
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+from setuptools import find_packages, setup
 
-# Read requirements
-with open("requirements.txt", "r", encoding="utf-8") as fh:
-    requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
-
-# Package version
-__version__ = "1.0.0"
-
+ROOT = Path(__file__).resolve().parent
 setup(
     name="tnsim",
-    version=__version__,
-    author="TNSIM Team",
+    version="1.1.0",
+    python_requires=">=3.10",
+    author="Andrey Tikhonov",
     author_email="andrew@xteam.pro",
-    description="Theory of Zero Sum of Infinite Sets - library for working with compensated infinite sets",
-    long_description=long_description,
+    description="Finite series computation and a FastAPI service",
+    long_description=(ROOT / "README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
+    license="AGPL-3.0-only",
+    license_files=[
+        "LICENSE",
+        "NOTICE",
+        "LICENSING.md",
+        "COMMERCIAL_LICENSE.md",
+        "ORDER_FORM_TEMPLATE.md",
+        "SECURITY.md",
+    ],
     url="https://github.com/StudyLabPro/Balansis",
-    project_urls={
-        "Bug Tracker": "https://github.com/StudyLabPro/Balansis/issues",
-        "Documentation": "https://github.com/StudyLabPro/Balansis/tree/master/docs",
-        "Source Code": "https://github.com/StudyLabPro/Balansis",
-    },
-    packages=find_packages(exclude=["tests*", "docs*", "examples*"]),
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Science/Research",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: GNU Affero General Public License v3",
-        "License :: Other/Proprietary License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Topic :: Scientific/Engineering :: Mathematics",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Topic :: Software Development :: Libraries :: Python Modules",
+    packages=["tnsim"]
+    + [
+        "tnsim." + name
+        for name in find_packages(str(ROOT), exclude=["tests", "tests.*"])
     ],
-    python_requires=">=3.9",
-    install_requires=requirements,
+    package_dir={"tnsim": "."},
+    package_data={"tnsim": ["migrations/*.sql", "database/init.sql"]},
+    install_requires=["numpy>=1.24,<2", "pydantic>=2.5,<3"],
     extras_require={
-        "dev": [
-            "pytest>=7.4.3",
-            "pytest-asyncio>=0.21.1",
-            "pytest-cov>=4.1.0",
-            "black>=23.11.0",
-            "isort>=5.12.0",
-            "flake8>=6.1.0",
-            "mypy>=1.7.1",
-            "pre-commit>=3.6.0",
-        ],
-        "docs": [
-            "sphinx>=7.2.6",
-            "sphinx-rtd-theme>=1.3.0",
-            "nbsphinx>=0.9.3",
-        ],
-        "jupyter": [
-            "jupyter>=1.0.0",
-            "jupyterlab>=4.0.8",
-            "matplotlib>=3.8.2",
-            "seaborn>=0.13.0",
-            "plotly>=5.17.0",
-            "ipywidgets>=8.1.1",
-        ],
-        "balansis": [
-            # "balansis>=0.6.1",  # Uncomment when Balansis becomes available
-        ],
-        "performance": [
-            "dask[complete]>=2023.11.0",
-            "ray[default]>=2.8.0",
-            "numba>=0.58.1",
-        ],
-        "monitoring": [
-            "prometheus-client>=0.19.0",
-            "grafana-api>=1.0.3",
-            "influxdb-client>=1.38.0",
-        ],
-        "all": [
-            "pytest>=7.4.3",
-            "pytest-asyncio>=0.21.1",
-            "pytest-cov>=4.1.0",
-            "black>=23.11.0",
-            "isort>=5.12.0",
-            "flake8>=6.1.0",
-            "mypy>=1.7.1",
-            "pre-commit>=3.6.0",
-            "sphinx>=7.2.6",
-            "sphinx-rtd-theme>=1.3.0",
-            "nbsphinx>=0.9.3",
-            "jupyter>=1.0.0",
-            "jupyterlab>=4.0.8",
-            "matplotlib>=3.8.2",
-            "seaborn>=0.13.0",
-            "plotly>=5.17.0",
-            "ipywidgets>=8.1.1",
-            "dask[complete]>=2023.11.0",
-            "ray[default]>=2.8.0",
-            "numba>=0.58.1",
-            "prometheus-client>=0.19.0",
-        ],
+        "api": ["fastapi>=0.104,<1", "uvicorn>=0.24,<1", "asyncpg>=0.29,<1"],
+        "torch": ["torch>=2"],
+        "dev": ["pytest>=7", "pytest-asyncio>=0.21", "httpx>=0.25"],
     },
-    entry_points={
-        "console_scripts": [
-            "tnsim-server=tnsim.api.main:main",
-            "tnsim-cli=tnsim.cli.main:main",
-            "tnsim-migrate=tnsim.database.migrate:main",
-        ],
-    },
-    include_package_data=True,
-    package_data={
-        "tnsim": [
-            "migrations/*.sql",
-            "examples/*.py",
-            "examples/*.ipynb",
-            "docs/*.md",
-        ],
-    },
-    zip_safe=False,
-    keywords=[
-        "mathematics",
-        "infinite-sets",
-        "zero-sum",
-        "compensation",
-        "numerical-stability",
-        "machine-learning",
-        "attention-mechanism",
-        "balansis",
-        "fastapi",
-        "pytorch",
-    ],
+    entry_points={"console_scripts": ["tnsim-server=tnsim:run_server"]},
 )
-
-# Additional package information
-if __name__ == "__main__":
-    print(f"TNSIM (Theory of Zero Sum of Infinite Sets) version {__version__}")
-    print("Theory of Zero Sum of Infinite Sets")
-    print("To install: pip install .")
-    print("For development: pip install -e .[dev]")
-    print("For all dependencies: pip install -e .[all]")

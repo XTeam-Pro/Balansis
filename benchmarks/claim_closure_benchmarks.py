@@ -17,15 +17,14 @@ from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
 
-import balansis
 import numpy as np
 
+import balansis
 from balansis import AbsoluteValue, Operations
 from balansis.core.eternity import SingularPolicy
-from balansis.logic.compensator import Compensator
 from balansis.finance.ledger import Ledger
 from balansis.linalg.svd import svd
-
+from balansis.logic.compensator import Compensator
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "benchmarks" / "results" / "claim_closure_baseline.json"
@@ -170,7 +169,10 @@ def scenario_extended_division_states() -> dict[str, object]:
         AbsoluteValue.from_float(6.0),
         AbsoluteValue.absolute(),
     )
-    indeterminate_ratio, indeterminate_compensation = Operations.compensated_divide_extended(
+    (
+        indeterminate_ratio,
+        indeterminate_compensation,
+    ) = Operations.compensated_divide_extended(
         AbsoluteValue.absolute(),
         AbsoluteValue.absolute(),
     )
@@ -211,12 +213,20 @@ def scenario_policy_driven_singular_arithmetic() -> dict[str, object]:
     numerator = AbsoluteValue.from_float(8.0)
     denominator = AbsoluteValue.absolute()
 
-    propagated_ratio, propagated_compensation, propagated_event = Operations.compensated_divide_policy(
+    (
+        propagated_ratio,
+        propagated_compensation,
+        propagated_event,
+    ) = Operations.compensated_divide_policy(
         numerator,
         denominator,
         SingularPolicy.PROPAGATE,
     )
-    saturated_ratio, saturated_compensation, saturated_event = Operations.compensated_divide_policy(
+    (
+        saturated_ratio,
+        saturated_compensation,
+        saturated_event,
+    ) = Operations.compensated_divide_policy(
         numerator,
         denominator,
         SingularPolicy.SATURATE,
@@ -235,13 +245,19 @@ def scenario_policy_driven_singular_arithmetic() -> dict[str, object]:
     return {
         "scenario": "policy_driven_singular_arithmetic",
         "propagate_kind": propagated_ratio.kind,
-        "propagate_event_policy": None if propagated_event is None else propagated_event.policy.value,
+        "propagate_event_policy": (
+            None if propagated_event is None else propagated_event.policy.value
+        ),
         "propagate_compensation": propagated_compensation,
         "saturate_kind": saturated_ratio.kind,
         "saturate_value": saturated_ratio.numerical_value(),
-        "saturate_event_policy": None if saturated_event is None else saturated_event.policy.value,
+        "saturate_event_policy": (
+            None if saturated_event is None else saturated_event.policy.value
+        ),
         "saturate_compensation": saturated_compensation,
-        "telemetry_event_policy": None if telemetry_event is None else telemetry_event.policy.value,
+        "telemetry_event_policy": (
+            None if telemetry_event is None else telemetry_event.policy.value
+        ),
         "telemetry_singular_operations": telemetry["singular_operations"],
         "telemetry_policy_event_count": len(telemetry["policy_events"]),
         "timing": {
@@ -274,7 +290,9 @@ def scenario_pipeline_policy_propagation() -> dict[str, object]:
         [AbsoluteValue.absolute(), AbsoluteValue.absolute()],
     ]
     propagated = svd(matrix, singular_policy=SingularPolicy.PROPAGATE)
-    saturated = svd(matrix, singular_policy=SingularPolicy.SATURATE, saturation_limit=50.0)
+    saturated = svd(
+        matrix, singular_policy=SingularPolicy.SATURATE, saturation_limit=50.0
+    )
 
     propagated_telemetry = propagated.singular_telemetry()
     saturated_telemetry = saturated.singular_telemetry()
@@ -282,16 +300,26 @@ def scenario_pipeline_policy_propagation() -> dict[str, object]:
     return {
         "scenario": "pipeline_policy_propagation",
         "svd_propagate_event_count": len(propagated_telemetry),
-        "svd_propagate_first_policy": propagated_telemetry[0]["policy"] if propagated_telemetry else None,
+        "svd_propagate_first_policy": (
+            propagated_telemetry[0]["policy"] if propagated_telemetry else None
+        ),
         "svd_saturate_event_count": len(saturated_telemetry),
-        "svd_saturate_first_policy": saturated_telemetry[0]["policy"] if saturated_telemetry else None,
+        "svd_saturate_first_policy": (
+            saturated_telemetry[0]["policy"] if saturated_telemetry else None
+        ),
         "svd_reconstruction_error": propagated.reconstruction_error,
         "timing": {
             "svd_policy_propagate": asdict(
                 measure(lambda: svd(matrix, singular_policy=SingularPolicy.PROPAGATE))
             ),
             "svd_policy_saturate": asdict(
-                measure(lambda: svd(matrix, singular_policy=SingularPolicy.SATURATE, saturation_limit=50.0))
+                measure(
+                    lambda: svd(
+                        matrix,
+                        singular_policy=SingularPolicy.SATURATE,
+                        saturation_limit=50.0,
+                    )
+                )
             ),
         },
     }
@@ -318,7 +346,7 @@ def build_report() -> dict[str, object]:
     ]
     return {
         "artifact": "claim_closure_baseline",
-        "version": "1.1.0",
+        "version": balansis.__version__,
         "implementation_sha256": source_hash.hexdigest(),
         "python_version": platform.python_version(),
         "numpy_version": np.__version__,
@@ -327,7 +355,9 @@ def build_report() -> dict[str, object]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run documented Balansis claim scenarios.")
+    parser = argparse.ArgumentParser(
+        description="Run documented Balansis claim scenarios."
+    )
     parser.add_argument(
         "--output",
         type=Path,

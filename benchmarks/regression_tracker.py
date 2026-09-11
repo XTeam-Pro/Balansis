@@ -14,7 +14,7 @@ import json
 import os
 import sys
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Dict
 
 from benchmarks.accuracy_benchmarks import AccuracyBenchmark
 from benchmarks.linalg_benchmarks import LinalgBenchmark
@@ -81,15 +81,21 @@ def run_linalg_benchmarks() -> Dict[str, float]:
 
     # GEMM reconstruction error (smallest size for speed)
     if results["gemm"]:
-        metrics["gemm_reconstruction_error_act"] = results["gemm"][0]["act_reconstruction_error"]
+        metrics["gemm_reconstruction_error_act"] = results["gemm"][0][
+            "act_reconstruction_error"
+        ]
 
     # SVD reconstruction error
     if results["svd"]:
-        metrics["svd_reconstruction_error_act"] = results["svd"][0]["act_reconstruction_error"]
+        metrics["svd_reconstruction_error_act"] = results["svd"][0][
+            "act_reconstruction_error"
+        ]
 
     # QR orthogonality error
     if results["qr"]:
-        metrics["qr_orthogonality_error_act"] = results["qr"][0]["act_orthogonality_error"]
+        metrics["qr_orthogonality_error_act"] = results["qr"][0][
+            "act_orthogonality_error"
+        ]
 
     return metrics
 
@@ -114,8 +120,10 @@ def compare_metrics(
         baseline_val = baseline[key]
 
         if baseline_val == 0 or not all(
-            map(lambda x: x != float("inf") and x != float("-inf"),
-                [current_val, baseline_val])
+            map(
+                lambda x: x != float("inf") and x != float("-inf"),
+                [current_val, baseline_val],
+            )
         ):
             continue
 
@@ -181,16 +189,16 @@ class RegressionTracker:
             return 0
 
         if not baselines:
-            print("\nNo baselines found. Run with --update to create initial baselines.")
+            print(
+                "\nNo baselines found. Run with --update to create initial baselines."
+            )
             return 0
 
         # Compare
         all_regressions = []
         for category in ["accuracy", "linalg"]:
             if category in baselines and category in current:
-                regressions = compare_metrics(
-                    current[category], baselines[category]
-                )
+                regressions = compare_metrics(current[category], baselines[category])
                 all_regressions.extend(regressions)
 
         # Check stability ratio threshold
@@ -219,8 +227,9 @@ class RegressionTracker:
 def main():
     parser = argparse.ArgumentParser(description="Balansis Regression Tracker")
     parser.add_argument(
-        "--update", action="store_true",
-        help="Update baselines with current benchmark results"
+        "--update",
+        action="store_true",
+        help="Update baselines with current benchmark results",
     )
     args = parser.parse_args()
 

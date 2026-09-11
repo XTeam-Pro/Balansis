@@ -15,18 +15,19 @@ underlying numerical kernel delegates to NumPy's ``np.linalg.svd`` (LAPACK
 ``gesdd``) for robustness on general dense matrices; the ACT layer adds the
 diagnostic envelope and the AbsoluteValue lifting.
 """
+
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Iterator, List, Tuple, Union
 
 import numpy as np
 
+from balansis.core._eft import dot2
 from balansis.core.absolute import AbsoluteValue
 from balansis.core.eternity import SingularArithmeticEvent, SingularPolicy
 from balansis.core.operations import Operations
-from balansis.core._eft import dot2
 
 _SVD_METHODS = ("numpy_gesdd", "act_jacobi")
 
@@ -51,7 +52,15 @@ def _act_jacobi_svd(
     from balansis.array import gram_pair
 
     # Columns stay contiguous throughout Jacobi sweeps and reach C without copies.
+    if not math.isfinite(tol) or tol <= 0 or max_sweeps <= 0:
+        raise ValueError("tol and max_sweeps must be positive")
     W = np.array(A, dtype=np.float64, order="F", copy=True)
+    if W.ndim != 2 or not W.size or not np.isfinite(W).all():
+        raise ValueError("SVD requires a nonempty finite matrix")
+    magnitude = float(np.max(np.abs(W)))
+    scale = magnitude if magnitude and (magnitude > 1e75 or magnitude < 1e-75) else 1.0
+    if scale != 1.0:
+        W /= scale
     m, n = W.shape
     transposed = False
     if m < n:
@@ -69,7 +78,12 @@ def _act_jacobi_svd(
                 aii, ajj, aij = gram_pair(ci, cj)
                 if aii <= 0.0 or ajj <= 0.0:
                     continue
-                denom = math.sqrt(aii * ajj)
+                product = aii * ajj
+                denom = (
+                    math.sqrt(product)
+                    if 0 < product < math.inf
+                    else math.sqrt(aii) * math.sqrt(ajj)
+                )
                 if denom == 0.0:
                     continue
                 rel = abs(aij) / denom
@@ -79,7 +93,12 @@ def _act_jacobi_svd(
                     continue
                 # Jacobi rotation that diagonalizes [[aii, aij], [aij, ajj]].
                 tau = (ajj - aii) / (2.0 * aij)
-                t = math.copysign(1.0, tau) / (abs(tau) + math.sqrt(1.0 + tau * tau))
+                t = (
+                    0.5 / tau
+                    if abs(tau) > 1e150
+                    else math.copysign(1.0, tau)
+                    / (abs(tau) + math.sqrt(1.0 + tau * tau))
+                )
                 c = 1.0 / math.sqrt(1.0 + t * t)
                 s = c * t
                 col_i = c * W[:, i] - s * W[:, j]
@@ -107,11 +126,25 @@ def _act_jacobi_svd(
         if singular[k] > 0.0:
             U[:, k] = W[:, k] / singular[k]
 
+    # Complete only the zero-singular-value basis. Nonzero vectors are retained.
+    for k in np.flatnonzero(singular == 0):
+        for index in range(m):
+            candidate = np.eye(1, m, index).ravel()
+            for _ in range(2):
+                candidate -= U[:, :k] @ (U[:, :k].T @ candidate)
+            norm = np.linalg.norm(candidate)
+            if norm > 1e-12:
+                U[:, k] = candidate / norm
+                break
+    singular *= scale
+    if not np.isfinite(singular).all():
+        raise OverflowError("Singular values overflow float64")
     Vt = V.T
     if transposed:
         # SVD(A^T) = U S Vt  =>  A = Vt^T S U^T
         U, Vt = Vt.T, U.T
     return U, singular, Vt
+
 
 Matrix = List[List[AbsoluteValue]]
 Vector = List[AbsoluteValue]
@@ -154,8 +187,10 @@ def _to_numpy(mat: Matrix) -> np.ndarray:
 
 
 def _from_numpy(arr: np.ndarray) -> Matrix:
-    return [[AbsoluteValue.from_float(float(arr[i, j])) for j in range(arr.shape[1])]
-            for i in range(arr.shape[0])]
+    return [
+        [AbsoluteValue.from_float(float(arr[i, j])) for j in range(arr.shape[1])]
+        for i in range(arr.shape[0])
+    ]
 
 
 def svd(
@@ -203,7 +238,9 @@ def svd(
         if leading == 0.0 or s_float == 0.0:
             compensations.append(1.0)
         else:
-            compensations.append(1.0 + max(0.0, np.log10(leading / max(s_float, 1e-300))))
+            compensations.append(
+                1.0 + max(0.0, np.log10(leading / max(s_float, 1e-300)))
+            )
 
         _, _, event = Operations.compensated_divide_policy(
             leading_abs,

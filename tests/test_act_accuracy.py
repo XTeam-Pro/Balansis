@@ -8,17 +8,18 @@ summation (S 5.2/5.3), correctly-rounded dot products (S 4.6), and the genuine
 ACT-compensated one-sided Jacobi SVD (S 4.3). They fail if a change silently
 regresses the accuracy the whitepaper promises.
 """
-from fractions import Fraction
 
 import math
+from fractions import Fraction
+
 import numpy as np
 import pytest
 
+from balansis.core._eft import dot2, two_product, two_sum
 from balansis.core.absolute import AbsoluteValue
 from balansis.core.operations import Operations
-from balansis.core._eft import two_sum, two_product, dot2
-from balansis.numpy_integration import compensated_dot_product
 from balansis.linalg.svd import svd
+from balansis.numpy_integration import compensated_dot_product
 
 
 def _relerr(approx: float, exact) -> float:
@@ -48,8 +49,8 @@ def test_dot2_correctly_rounded_on_ill_conditioned():
     y[n - 1] = float((Fraction(1) - partial) / Fraction(float(x[n - 1])))
     true = sum(Fraction(float(x[i])) * Fraction(float(y[i])) for i in range(n))
     # condition number of this dot product is ~1e17
-    assert _relerr(float(np.dot(x, y)), true) > 1e-2      # naive fails
-    assert _relerr(dot2(x, y), true) < 1e-14              # Dot2 is essentially exact
+    assert _relerr(float(np.dot(x, y)), true) > 1e-2  # naive fails
+    assert _relerr(dot2(x, y), true) < 1e-14  # Dot2 is essentially exact
     assert _relerr(compensated_dot_product(x, y), true) < 1e-14
 
 
@@ -72,10 +73,10 @@ def test_sequence_sum_beats_classic_kahan_on_cancellation():
     naive = 0.0
     for v in vals:
         naive += v
-    assert naive == 0.0                     # float64 loses everything
-    assert classic_kahan(vals) == 0.0       # classic Kahan also fails on this pattern
+    assert naive == 0.0  # float64 loses everything
+    assert classic_kahan(vals) == 0.0  # classic Kahan also fails on this pattern
     act, _ = Operations.sequence_sum([AbsoluteValue.from_float(v) for v in vals])
-    assert _relerr(act.to_float(), true) < 1e-13   # ACT (Neumaier) recovers it
+    assert _relerr(act.to_float(), true) < 1e-13  # ACT (Neumaier) recovers it
 
 
 def test_act_jacobi_svd_reconstruction_and_orthogonality():

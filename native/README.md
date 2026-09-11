@@ -1,60 +1,18 @@
 # Balansis C kernels
 
-Optional CPython extension for sequential Neumaier summation and exact dot
-products of binary64 buffers.
-This package is built separately so the Balansis Python package still installs
-without a C compiler. No NumPy C ABI dependency, SIMD dispatch or assembly is used.
+`balansis-kernels` 0.3.0 provides optional CPython C11 kernels for Balansis:
+Neumaier summation, exact binary64 dot products and fused Gram entries.
 
-From the Balansis repository root, in the intended Python environment:
+From this directory, run `python -m pip install .`. From the Balansis repository
+root, run `python -m pip install ./native`. The extension module is named
+`_balansis_kernels`; its backward-compatible API version is 1.
 
-```bash
-python -m pip install ./native
-python -c "from balansis.array import native_available; assert native_available()"
-python -m pytest tests/test_array_sum.py tests/test_array_dot.py --no-cov
-```
+The public Python entry points are `sum_array`, `dot_array` and `gram_pair` in
+`balansis.array`. They select installed C kernels automatically. For example,
+`gram_pair([1., 2.], [3., 4.], backend="native")` returns `(5., 25., 11.)`.
 
-Builds require a C11 compiler and Python development headers. GCC/Clang use
-`-O3 -fno-fast-math -ffp-contract=off -fexcess-precision=standard`; MSVC uses
-`/O2 /fp:strict /std:c11`. Platforms must have binary64 doubles with evaluation
-in the declared type. Platform compatibility must be validated before publishing
-wheels; the accompanying benchmark records the tested environment.
+C entry points accept one-dimensional contiguous native float64 buffers.
+The compiler must support C11 and IEEE-754 binary64. Strict floating-point flags
+are applied by `setup.py`. Source files and sanitizer harnesses ship in the sdist.
 
-The kernel keeps the GIL and accepts a contiguous, one-dimensional native double
-buffer, including read-only and unaligned buffers. The caller must prevent
-concurrent writes by native threads or external processes. It assumes round to
-nearest, ties to even, and gradual underflow; altered floating-point modes are
-unsupported. The internal API returns `(corrected_sum, signed_correction)`;
-Balansis converts this to its public result and diagnostic. API version is 1.
-
-NaN/infinity raise `ValueError`; intermediate, correction or final overflow raises
-`OverflowError`. Input is examined in order: the first detected invalid operation
-determines the exception. Compensation is not arbitrary precision or a guarantee
-of correct rounding. Precision lost before conversion to binary64 is unrecoverable.
-
-Version 0.2 adds `exact_dot(a, b)` without changing kernel API 1's sum interface.
-It uses two fixed-size integer accumulators, one per sign, and rounds the exact
-difference once to binary64 with ties to even. The total accumulator storage is
-1,088 bytes, independent of input length. Inputs must have equal lengths and be
-finite; individual products may exceed binary64 range and later cancel. Only
-final rounded overflow raises `OverflowError`. Exact zero returns +0.0 and
-negative underflow returns -0.0. Native buffers must use IEEE-754 binary64 layout.
-
-Balansis detects the new operation separately, so a 0.1 sum-only extension still
-accelerates sums while dot products use the exact Python reference. The public
-`dot_array` API rejects nonfinite inputs; legacy `dot2` keeps NumPy propagation
-for nonfinite inputs. See `docs/benchmarks/native-dot.md` in the source repository
-for the accumulator bound, tests and measurements. No existing Lean theorem is
-claimed to verify the C implementation.
-
-Version 0.3 adds `gram_pair(a, b)`, returning `(dot(a,a), dot(b,b), dot(a,b))`
-in one input pass. The entries use separate exact accumulators and the existing
-rounding implementation; any rounded entry overflowing float64 raises
-`OverflowError`. Nonfinite input takes precedence over norm overflow. The kernel
-uses five fixed arrays (2720 bytes total) for four magnitude accumulators and a
-zero scratch array. The buffer, lifetime and GIL rules remain the same.
-`native_gram_available()` detects this operation independently of the 0.1 sum
-and 0.2 exact-dot capabilities. Auto mode can use three exact C calls with an
-older extension, or three Python-reference calls when C is absent.
-
-The sources are part of Balansis and use its existing dual-license terms; see
-`LICENSE`, `NOTICE`, `LICENSING.md` and `COMMERCIAL_LICENSE.md` in this distribution.
+AGPL-3.0-only or separate commercial license; see the included licensing files.

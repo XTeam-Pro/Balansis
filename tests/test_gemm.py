@@ -2,9 +2,9 @@
 
 import pytest
 
+from balansis import ACT_EPSILON
 from balansis.core.absolute import AbsoluteValue
 from balansis.linalg.gemm import matmul
-from balansis import ACT_EPSILON
 
 
 class TestMatmul:
@@ -13,12 +13,24 @@ class TestMatmul:
     def test_matmul_basic_2x2(self):
         """Test basic 2x2 matrix multiplication."""
         a = [
-            [AbsoluteValue(magnitude=1.0, direction=1), AbsoluteValue(magnitude=2.0, direction=1)],
-            [AbsoluteValue(magnitude=3.0, direction=1), AbsoluteValue(magnitude=4.0, direction=1)],
+            [
+                AbsoluteValue(magnitude=1.0, direction=1),
+                AbsoluteValue(magnitude=2.0, direction=1),
+            ],
+            [
+                AbsoluteValue(magnitude=3.0, direction=1),
+                AbsoluteValue(magnitude=4.0, direction=1),
+            ],
         ]
         b = [
-            [AbsoluteValue(magnitude=5.0, direction=1), AbsoluteValue(magnitude=6.0, direction=1)],
-            [AbsoluteValue(magnitude=7.0, direction=1), AbsoluteValue(magnitude=8.0, direction=1)],
+            [
+                AbsoluteValue(magnitude=5.0, direction=1),
+                AbsoluteValue(magnitude=6.0, direction=1),
+            ],
+            [
+                AbsoluteValue(magnitude=7.0, direction=1),
+                AbsoluteValue(magnitude=8.0, direction=1),
+            ],
         ]
         result, compensation = matmul(a, b)
         assert len(result) == 2
@@ -52,7 +64,10 @@ class TestMatmul:
         """Test matmul with inconsistent rows in matrix a."""
         a = [
             [AbsoluteValue(magnitude=1.0, direction=1)],
-            [AbsoluteValue(magnitude=1.0, direction=1), AbsoluteValue(magnitude=2.0, direction=1)],
+            [
+                AbsoluteValue(magnitude=1.0, direction=1),
+                AbsoluteValue(magnitude=2.0, direction=1),
+            ],
         ]
         b = [[AbsoluteValue(magnitude=1.0, direction=1)]]
         with pytest.raises(ValueError, match="Invalid shape for matrix a"):
@@ -70,7 +85,10 @@ class TestMatmul:
         a = [[AbsoluteValue(magnitude=1.0, direction=1)]]
         b = [
             [AbsoluteValue(magnitude=1.0, direction=1)],
-            [AbsoluteValue(magnitude=1.0, direction=1), AbsoluteValue(magnitude=2.0, direction=1)],
+            [
+                AbsoluteValue(magnitude=1.0, direction=1),
+                AbsoluteValue(magnitude=2.0, direction=1),
+            ],
         ]
         with pytest.raises(ValueError):
             matmul(a, b)
@@ -89,8 +107,14 @@ class TestMatmul:
             [AbsoluteValue.absolute(), AbsoluteValue(magnitude=1.0, direction=1)],
         ]
         a = [
-            [AbsoluteValue(magnitude=3.0, direction=1), AbsoluteValue(magnitude=4.0, direction=1)],
-            [AbsoluteValue(magnitude=5.0, direction=1), AbsoluteValue(magnitude=6.0, direction=1)],
+            [
+                AbsoluteValue(magnitude=3.0, direction=1),
+                AbsoluteValue(magnitude=4.0, direction=1),
+            ],
+            [
+                AbsoluteValue(magnitude=5.0, direction=1),
+                AbsoluteValue(magnitude=6.0, direction=1),
+            ],
         ]
         result, comp = matmul(a, identity)
         assert abs(result[0][0].to_float() - 3.0) < ACT_EPSILON
@@ -111,14 +135,17 @@ class TestLinalgExports:
     def test_import_matmul(self):
         """Test matmul is importable from linalg."""
         from balansis.linalg import matmul as mm
+
         assert callable(mm)
 
     def test_import_svd(self):
         """Test svd is importable from linalg."""
         from balansis.linalg import svd
+
         assert callable(svd)
 
     def test_import_qr_decompose(self):
         """Test qr_decompose is importable from linalg."""
         from balansis.linalg import qr_decompose
+
         assert callable(qr_decompose)

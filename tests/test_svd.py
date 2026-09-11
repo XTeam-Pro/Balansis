@@ -1,11 +1,11 @@
 """Tests for ACT-compensated Singular Value Decomposition."""
 
-import pytest
 import numpy as np
+import pytest
 
 from balansis import ACT_EPSILON, SingularPolicy
 from balansis.core.absolute import AbsoluteValue
-from balansis.linalg.svd import svd, CompensatedSVDResult
+from balansis.linalg.svd import CompensatedSVDResult, svd
 
 
 def _make_matrix(arr):
@@ -188,11 +188,13 @@ class TestSVDSpecialCases:
 
     def test_rank_deficient(self):
         """SVD of a rank-deficient matrix."""
-        A = np.array([
-            [1.0, 2.0, 3.0],
-            [2.0, 4.0, 6.0],
-            [3.0, 6.0, 9.0],
-        ])
+        A = np.array(
+            [
+                [1.0, 2.0, 3.0],
+                [2.0, 4.0, 6.0],
+                [3.0, 6.0, 9.0],
+            ]
+        )
         a = _make_matrix(A)
         result = svd(a)
         S = _s_to_numpy(result.S)
@@ -208,11 +210,13 @@ class TestSVDSpecialCases:
         # singular-arithmetic event. A non-diagonal rank-deficient matrix can
         # instead yield a ~1e-15 "zero", which lands on the near-zero threshold
         # boundary and makes this assertion flaky across NumPy/LAPACK versions.
-        A = np.array([
-            [3.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0],
-        ])
+        A = np.array(
+            [
+                [3.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
         result = svd(_make_matrix(A))
         telemetry = result.singular_telemetry()
         assert telemetry
@@ -222,7 +226,9 @@ class TestSVDSpecialCases:
     def test_rank_deficient_svd_raise_policy_fails_fast(self):
         """SVD can fail fast when singular values hit zero under raise policy."""
         A = np.zeros((2, 2))
-        with pytest.raises(ValueError, match="compensated_divide_policy produced singular"):
+        with pytest.raises(
+            ValueError, match="compensated_divide_policy produced singular"
+        ):
             svd(_make_matrix(A), singular_policy=SingularPolicy.RAISE)
 
     def test_rank_deficient_svd_saturate_policy_bounds_events(self):
@@ -236,11 +242,13 @@ class TestSVDSpecialCases:
 
     def test_zero_row(self):
         """SVD of a matrix with a zero row."""
-        A = np.array([
-            [1.0, 2.0],
-            [0.0, 0.0],
-            [3.0, 4.0],
-        ])
+        A = np.array(
+            [
+                [1.0, 2.0],
+                [0.0, 0.0],
+                [3.0, 4.0],
+            ]
+        )
         a = _make_matrix(A)
         result = svd(a)
         U = _to_numpy(result.U)

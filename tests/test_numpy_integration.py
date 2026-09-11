@@ -1,6 +1,8 @@
 import numpy as np
+
 from balansis.core.absolute import AbsoluteValue
-from balansis.numpy_integration import to_numpy, from_numpy, ufunc_add, ufunc_log
+from balansis.numpy_integration import from_numpy, to_numpy, ufunc_add, ufunc_log
+
 
 def test_to_from_numpy_roundtrip():
     values = [AbsoluteValue.from_float(1.0), AbsoluteValue.from_float(-2.0)]
@@ -9,15 +11,23 @@ def test_to_from_numpy_roundtrip():
     assert back[0] == values[0]
     assert back[1] == values[1]
 
+
 def test_numpy_ufunc_add():
-    a = np.array([AbsoluteValue.from_float(1.0), AbsoluteValue.from_float(2.0)], dtype=object)
-    b = np.array([AbsoluteValue.from_float(3.0), AbsoluteValue.from_float(-1.0)], dtype=object)
+    a = np.array(
+        [AbsoluteValue.from_float(1.0), AbsoluteValue.from_float(2.0)], dtype=object
+    )
+    b = np.array(
+        [AbsoluteValue.from_float(3.0), AbsoluteValue.from_float(-1.0)], dtype=object
+    )
     c = ufunc_add(a, b)
     assert c[0].to_float() == 4.0
     assert c[1].to_float() == 1.0
 
+
 def test_numpy_ufunc_log():
-    a = np.array([AbsoluteValue.from_float(1.0), AbsoluteValue.from_float(4.0)], dtype=object)
+    a = np.array(
+        [AbsoluteValue.from_float(1.0), AbsoluteValue.from_float(4.0)], dtype=object
+    )
     l = ufunc_log(a)
     assert abs(l[0] - 0.0) < 1e-12
     assert abs(l[1] - np.log(4.0)) < 1e-12
@@ -25,6 +35,7 @@ def test_numpy_ufunc_log():
 
 def test_compensated_array_add():
     from balansis.numpy_integration import compensated_array_add
+
     a = np.array([1.0, 2.0, 3.0])
     b = np.array([4.0, -1.0, 0.5])
     result = compensated_array_add(a, b)
@@ -34,6 +45,7 @@ def test_compensated_array_add():
 
 def test_compensated_array_add_preserves_shape():
     from balansis.numpy_integration import compensated_array_add
+
     a = np.array([[1.0, 2.0], [3.0, 4.0]])
     b = np.array([[5.0, 6.0], [7.0, 8.0]])
     result = compensated_array_add(a, b)
@@ -43,6 +55,7 @@ def test_compensated_array_add_preserves_shape():
 
 def test_compensated_array_multiply():
     from balansis.numpy_integration import compensated_array_multiply
+
     a = np.array([2.0, 3.0, -1.0])
     b = np.array([4.0, -2.0, 5.0])
     result = compensated_array_multiply(a, b)
@@ -52,6 +65,7 @@ def test_compensated_array_multiply():
 
 def test_compensated_dot_product():
     from balansis.numpy_integration import compensated_dot_product
+
     a = np.array([1.0, 2.0, 3.0])
     b = np.array([4.0, 5.0, 6.0])
     result = compensated_dot_product(a, b)
@@ -60,6 +74,7 @@ def test_compensated_dot_product():
 
 def test_compensated_dot_product_orthogonal():
     from balansis.numpy_integration import compensated_dot_product
+
     a = np.array([1.0, 0.0])
     b = np.array([0.0, 1.0])
     result = compensated_dot_product(a, b)
@@ -68,6 +83,7 @@ def test_compensated_dot_product_orthogonal():
 
 def test_compensated_outer_product():
     from balansis.numpy_integration import compensated_outer_product
+
     a = np.array([1.0, 2.0])
     b = np.array([3.0, 4.0])
     result = compensated_outer_product(a, b)
@@ -78,6 +94,7 @@ def test_compensated_outer_product():
 
 def test_compensated_softmax():
     from balansis.numpy_integration import compensated_softmax
+
     logits = np.array([1.0, 2.0, 3.0])
     result = compensated_softmax(logits)
     # Compare with standard softmax
@@ -90,6 +107,7 @@ def test_compensated_softmax():
 
 def test_compensated_softmax_uniform():
     from balansis.numpy_integration import compensated_softmax
+
     logits = np.array([0.0, 0.0, 0.0])
     result = compensated_softmax(logits)
-    np.testing.assert_allclose(result, np.array([1/3, 1/3, 1/3]), atol=1e-6)
+    np.testing.assert_allclose(result, np.array([1 / 3, 1 / 3, 1 / 3]), atol=1e-6)

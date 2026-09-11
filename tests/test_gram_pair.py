@@ -159,8 +159,13 @@ def test_svd_rank_deficient_zero_and_ill_conditioned_parity():
     ]
     function = importlib.import_module("balansis.linalg.svd")._act_jacobi_svd
     for matrix in matrices:
-        for expected, actual in zip(REFERENCE_SVD(matrix), function(matrix)):
-            assert expected.tobytes() == actual.tobytes()
+        old_u, old_s, old_vt = REFERENCE_SVD(matrix)
+        u, singular, vt = function(matrix)
+        assert old_s.tobytes() == singular.tobytes()
+        assert old_vt.tobytes() == vt.tobytes()
+        assert np.array_equal(old_u[:, singular > 0], u[:, singular > 0])
+        assert np.allclose(u.T @ u, np.eye(u.shape[1]), atol=1e-12)
+        assert np.allclose(u @ np.diag(singular) @ vt, matrix, atol=1e-12)
 
 
 @pytest.mark.parametrize("shape", [(32, 4), (4, 32)])

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -9,31 +11,29 @@
 # For commercial licensing: andrew@xteam.pro
 import itertools
 import math
-from typing import Iterator
+from typing import Iterable, Iterator
+
 from balansis.core.absolute import AbsoluteValue
 from balansis.sets.eternal_set import EternalSet
 
+
 def global_compensate(set_a: EternalSet, set_b: EternalSet) -> EternalSet:
+    """Combine corresponding terms; infinite streams retain one zero per pair."""
     zero = AbsoluteValue.absolute()
+    infinite = set_a.is_infinite or set_b.is_infinite
+
     def generator() -> Iterator[AbsoluteValue]:
         for a, b in itertools.zip_longest(set_a, set_b, fillvalue=zero):
-            r = a + b
-            if hasattr(r, "is_absolute"):
-                if r.is_absolute():
-                    if set_a.is_infinite or set_b.is_infinite:
-                        yield zero
-                    else:
-                        continue
-            else:
-                if math.isclose(r.magnitude, 0.0, rel_tol=1e-12, abs_tol=1e-12):
-                    if set_a.is_infinite or set_b.is_infinite:
-                        yield zero
-                    else:
-                        continue
-            yield r
-    return EternalSet(generator(), is_infinite=(set_a.is_infinite or set_b.is_infinite), rule_name="global_compensate")
+            result = a + b
+            if not result.is_absolute() or infinite:
+                yield result
 
-def verify_zero_sum(result_set: EternalSet, threshold: int = 1000):
+    return EternalSet(generator(), is_infinite=infinite, rule_name="global_compensate")
+
+
+def verify_zero_sum(
+    result_set: EternalSet, threshold: int = 1000
+) -> list[AbsoluteValue]:
     residuals = []
     it = iter(result_set)
     for _ in range(int(threshold)):
@@ -50,7 +50,16 @@ def verify_zero_sum(result_set: EternalSet, threshold: int = 1000):
         residuals.append(x)
     return residuals
 
-def stream_compensate(iter1, iter2, limit: int | None = None):
+
+def stream_compensate(
+    iter1: Iterable[AbsoluteValue],
+    iter2: Iterable[AbsoluteValue],
+    limit: int | None = None,
+) -> Iterator[AbsoluteValue]:
+    if limit is not None and limit < 0:
+        raise ValueError("limit must be non-negative")
+    if limit == 0:
+        return
     zero = AbsoluteValue.absolute()
     count = 0
     for a, b in itertools.zip_longest(iter1, iter2, fillvalue=zero):
@@ -63,7 +72,12 @@ def stream_compensate(iter1, iter2, limit: int | None = None):
         if limit is not None and count >= limit:
             break
 
-def convergence_detector(result_iter, window: int = 100, tol: float = 1e-12) -> bool:
+
+def convergence_detector(
+    result_iter: Iterable[AbsoluteValue], window: int = 100, tol: float = 1e-12
+) -> bool:
+    if window <= 0 or not math.isfinite(tol) or tol < 0:
+        raise ValueError("window must be positive and tol finite and non-negative")
     buf = []
     for x in result_iter:
         buf.append(x)

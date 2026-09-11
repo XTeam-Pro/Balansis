@@ -14,10 +14,11 @@ requires suitable range conditions; splitting can overflow and product residuals
 can underflow. ``dot2`` uses the separate exact integer accumulator through
 ``dot_array`` rather than relying on those transforms for full-range inputs.
 """
+
 from __future__ import annotations
 
 import math
-from typing import Tuple
+from typing import Any, Tuple
 
 import numpy as np
 
@@ -62,7 +63,7 @@ def two_product_arr(a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarra
     return p, err
 
 
-def dot2(a, b) -> float:
+def dot2(a: Any, b: Any) -> float:
     """Flatten inputs and compute an exact finite binary64 dot product.
 
     Finite values use ``dot_array`` with its native or integer Python backend.
@@ -81,7 +82,7 @@ def dot2(a, b) -> float:
     return dot_array(a, b)
 
 
-def comp_sum(values) -> float:
+def comp_sum(values: Any) -> float:
     """Correctly rounded sum of a 1-D set of floats (exact summation)."""
     arr = np.asarray(values, dtype=np.float64).ravel()
     if arr.size == 0:

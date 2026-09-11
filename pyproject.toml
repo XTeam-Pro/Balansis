@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "balansis"
-version = "1.1.0"
+version = "1.2.0"
 description = "Scientific Python library for explicit compensation, singular arithmetic, and formally audited numerical semantics"
 authors = ["Andrey Tikhonov <andrew@xteam.pro>"]
 license = "AGPL-3.0-only"
@@ -9,7 +9,17 @@ homepage = "https://github.com/StudyLabPro/Balansis"
 repository = "https://github.com/StudyLabPro/Balansis"
 documentation = "https://github.com/StudyLabPro/Balansis/tree/master/docs"
 packages = [{include = "balansis"}]
-include = ["balansis/py.typed", "LICENSE", "NOTICE", "LICENSING.md", "COMMERCIAL_LICENSE.md", "CLA.md", "CONTRIBUTING.md", "SECURITY.md", "ORDER_FORM_TEMPLATE.md"]
+include = [
+    {path = "balansis/py.typed", format = ["sdist", "wheel"]},
+    {path = "LICENSE", format = ["sdist", "wheel"]},
+    {path = "NOTICE", format = ["sdist", "wheel"]},
+    {path = "LICENSING.md", format = ["sdist", "wheel"]},
+    {path = "COMMERCIAL_LICENSE.md", format = ["sdist", "wheel"]},
+    {path = "CLA.md", format = ["sdist", "wheel"]},
+    {path = "CONTRIBUTING.md", format = ["sdist", "wheel"]},
+    {path = "SECURITY.md", format = ["sdist", "wheel"]},
+    {path = "ORDER_FORM_TEMPLATE.md", format = ["sdist", "wheel"]},
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
@@ -80,9 +90,7 @@ omit = [
     "*/test_*",
     "setup.py",
     "*/examples/*",
-    # Legacy/integration scaffolds with no shipped surface yet. They are
-    # tracked separately and excluded so the production coverage gate
-    # reflects only modules that ship as part of v1.1.0.
+    # Optional integrations are exercised by their dedicated test suites.
     "balansis/utils/plot.py",
     "balansis/pandas_ext.py",
     "balansis/vectorized.py",
@@ -164,3 +172,7 @@ exclude = [
     ".mypy_cache",
     ".pytest_cache",
 ]
+
+[[tool.mypy.overrides]]
+module = ["pandas", "pandas.*", "pyarrow"]
+ignore_missing_imports = true
