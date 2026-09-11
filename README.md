@@ -29,7 +29,7 @@ assert (B(3) + B(-2)).to_float() == 1.0
 ```
 
 [Documentation](docs/index.md) · [API reference](docs/reference/index.md) ·
-[Examples](examples/README.md) · [Release](docs/release.md) ·
+[Examples](examples/README.md) · [Changelog](CHANGELOG.md) · [Release](docs/release.md) ·
 [Contributing](CONTRIBUTING.md)
 
 ## License
