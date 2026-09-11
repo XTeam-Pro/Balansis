@@ -119,3 +119,34 @@ enum balansis_sum_status balansis_exact_dot(
     }
     return rounded_difference(positive, negative, result);
 }
+
+enum balansis_sum_status balansis_gram_pair(
+    const void *left, const void *right, size_t n, double result[3])
+{
+    uint32_t aa[LIMBS] = {0}, bb[LIMBS] = {0};
+    uint32_t ab_positive[LIMBS] = {0}, ab_negative[LIMBS] = {0};
+    uint32_t zero[LIMBS] = {0};
+    const unsigned char *a = left, *b = right;
+    for (size_t i = 0; i < n; ++i) {
+        uint64_t x, y;
+        memcpy(&x, a + i * sizeof(double), sizeof(x));
+        memcpy(&y, b + i * sizeof(double), sizeof(y));
+        unsigned ex = (unsigned)((x >> 52) & 2047);
+        unsigned ey = (unsigned)((y >> 52) & 2047);
+        if (ex == 2047 || ey == 2047) return BALANSIS_SUM_NONFINITE;
+        uint64_t mx = (x & FRACTION_MASK) | (ex ? UINT64_C(1) << 52 : 0);
+        uint64_t my = (y & FRACTION_MASK) | (ey ? UINT64_C(1) << 52 : 0);
+        unsigned sx = ex ? ex - 1 : 0, sy = ey ? ey - 1 : 0;
+        if (mx) add_product(aa, mx, mx, 2 * sx);
+        if (my) add_product(bb, my, my, 2 * sy);
+        if (mx && my)
+            add_product(((x ^ y) >> 63) ? ab_negative : ab_positive,
+                        mx, my, sx + sy);
+    }
+    /* Norms are nonnegative, so rounded_difference never mutates zero. */
+    enum balansis_sum_status status = rounded_difference(aa, zero, &result[0]);
+    if (status != BALANSIS_SUM_OK) return status;
+    status = rounded_difference(bb, zero, &result[1]);
+    if (status != BALANSIS_SUM_OK) return status;
+    return rounded_difference(ab_positive, ab_negative, &result[2]);
+}

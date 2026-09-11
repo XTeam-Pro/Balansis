@@ -2,7 +2,6 @@
 
 import argparse
 import hashlib
-import importlib
 import json
 import math
 import os
@@ -58,15 +57,19 @@ def outcome(function, exact):
 
 
 def svd_comparison(matrix):
-    module = importlib.import_module("balansis.linalg.svd")
-    original = module.dot2
+    # Keep this historical comparison on the pre-fusion algorithm. Current SVD
+    # uses gram_pair and no longer obtains all three entries through dot2.
+    reference_svd = runpy.run_path(str(ROOT / "benchmarks/_svd_before_gram.py"))[
+        "_act_jacobi_svd"
+    ]
+    original = reference_svd.__globals__["dot2"]
 
     def run(kernel):
-        module.dot2 = kernel
+        reference_svd.__globals__["dot2"] = kernel
         try:
-            return module._act_jacobi_svd(matrix)
+            return reference_svd(matrix)
         finally:
-            module.dot2 = original
+            reference_svd.__globals__["dot2"] = original
 
     methods = {
         "legacy_dot_svd": lambda: run(legacy_dot),

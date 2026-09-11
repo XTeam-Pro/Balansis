@@ -78,11 +78,44 @@ static PyObject *exact_dot(PyObject *self, PyObject *args)
     return PyFloat_FromDouble(result);
 }
 
+static PyObject *gram_pair(PyObject *self, PyObject *args)
+{
+    (void)self;
+    PyObject *left, *right;
+    if (!PyArg_ParseTuple(args, "OO:gram_pair", &left, &right)) return NULL;
+    Py_buffer a, b;
+    if (get_double_buffer(left, &a) < 0) return NULL;
+    if (get_double_buffer(right, &b) < 0) {
+        PyBuffer_Release(&a);
+        return NULL;
+    }
+    if (a.len != b.len) {
+        PyBuffer_Release(&a);
+        PyBuffer_Release(&b);
+        PyErr_SetString(PyExc_ValueError, "gram_pair requires equal lengths");
+        return NULL;
+    }
+    double result[3];
+    enum balansis_sum_status status = balansis_gram_pair(
+        a.buf, b.buf, (size_t)(a.len / sizeof(double)), result);
+    PyBuffer_Release(&a);
+    PyBuffer_Release(&b);
+    if (status != BALANSIS_SUM_OK) {
+        PyErr_SetString(status == BALANSIS_SUM_NONFINITE ? PyExc_ValueError : PyExc_OverflowError,
+            status == BALANSIS_SUM_NONFINITE ? "gram_pair requires finite values" :
+            "rounded Gram entry overflowed float64");
+        return NULL;
+    }
+    return Py_BuildValue("(ddd)", result[0], result[1], result[2]);
+}
+
 static PyMethodDef methods[] = {
     {"neumaier_sum", neumaier_sum, METH_O,
      "Return (sum, signed correction) for a contiguous native float64 buffer."},
     {"exact_dot", exact_dot, METH_VARARGS,
      "Exact dot product of finite binary64 buffers, rounded once to nearest-even."},
+    {"gram_pair", gram_pair, METH_VARARGS,
+     "Return exact (dot(a,a), dot(b,b), dot(a,b)) rounded to binary64."},
     {NULL, NULL, 0, NULL}
 };
 

@@ -243,6 +243,17 @@ nonfinite inputs. Mismatched flattened lengths now raise `ValueError` instead
 of allowing unintended broadcasting. See the
 [exact-dot implementation and measurements](docs/benchmarks/native-dot.md).
 
+### Fused Gram pairs for Jacobi SVD
+
+`gram_pair(a, b)` returns `(dot(a,a), dot(b,b), dot(a,b))`, with each exact sum
+rounded once to float64. Native extension 0.3 computes all three entries in one
+input pass. Jacobi SVD uses this operation automatically and stores its working
+matrix by columns, avoiding copies of each column at the Python/C boundary.
+The rotation formulas and convergence criteria are unchanged.
+
+Older extensions and the Python reference remain supported. See the
+[Gram-pair measurements and compatibility checks](docs/benchmarks/native-gram.md).
+
 ## Documentation By Audience
 
 | Audience | Start here | Why |

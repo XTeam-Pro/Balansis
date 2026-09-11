@@ -46,5 +46,15 @@ for nonfinite inputs. See `docs/benchmarks/native-dot.md` in the source reposito
 for the accumulator bound, tests and measurements. No existing Lean theorem is
 claimed to verify the C implementation.
 
+Version 0.3 adds `gram_pair(a, b)`, returning `(dot(a,a), dot(b,b), dot(a,b))`
+in one input pass. The entries use separate exact accumulators and the existing
+rounding implementation; any rounded entry overflowing float64 raises
+`OverflowError`. Nonfinite input takes precedence over norm overflow. The kernel
+uses five fixed arrays (2720 bytes total) for four magnitude accumulators and a
+zero scratch array. The buffer, lifetime and GIL rules remain the same.
+`native_gram_available()` detects this operation independently of the 0.1 sum
+and 0.2 exact-dot capabilities. Auto mode can use three exact C calls with an
+older extension, or three Python-reference calls when C is absent.
+
 The sources are part of Balansis and use its existing dual-license terms; see
 `LICENSE`, `NOTICE`, `LICENSING.md` and `COMMERCIAL_LICENSE.md` in this distribution.

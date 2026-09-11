@@ -38,7 +38,8 @@ def _act_jacobi_svd(
 
     All column inner products (the Gram entries that drive each rotation and the
     final singular values) are computed with the correctly-rounded
-    :func:`balansis.core._eft.dot2`, so the decomposition genuinely uses ACT
+    :func:`balansis.array.gram_pair` and :func:`balansis.core._eft.dot2`,
+    so the decomposition genuinely uses ACT
     compensated arithmetic rather than delegating to LAPACK. One-sided Jacobi is
     chosen because it attains high *relative* accuracy on the singular values of
     ill-conditioned matrices, where its accuracy benefits directly from the
@@ -47,11 +48,14 @@ def _act_jacobi_svd(
     Returns ``(U, S, Vt)`` with ``S`` sorted descending, analogous to
     ``np.linalg.svd(A, full_matrices=False)``.
     """
-    W = np.asarray(A, dtype=np.float64).copy()
+    from balansis.array import gram_pair
+
+    # Columns stay contiguous throughout Jacobi sweeps and reach C without copies.
+    W = np.array(A, dtype=np.float64, order="F", copy=True)
     m, n = W.shape
     transposed = False
     if m < n:
-        W = W.T.copy()
+        W = W.T.copy(order="F")
         m, n = W.shape
         transposed = True
 
@@ -62,9 +66,7 @@ def _act_jacobi_svd(
             for j in range(i + 1, n):
                 ci = W[:, i]
                 cj = W[:, j]
-                aii = dot2(ci, ci)
-                ajj = dot2(cj, cj)
-                aij = dot2(ci, cj)
+                aii, ajj, aij = gram_pair(ci, cj)
                 if aii <= 0.0 or ajj <= 0.0:
                     continue
                 denom = math.sqrt(aii * ajj)

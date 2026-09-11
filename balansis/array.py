@@ -30,6 +30,56 @@ def native_dot_available() -> bool:
     return native_available() and callable(getattr(_kernels, "exact_dot", None))
 
 
+def native_gram_available() -> bool:
+    """Whether the extension supports the fused three-product kernel."""
+    return native_available() and callable(getattr(_kernels, "gram_pair", None))
+
+
+def gram_pair(
+    a: ArrayLike,
+    b: ArrayLike,
+    *,
+    backend: Literal["auto", "python", "native"] = "auto",
+) -> tuple[float, float, float]:
+    """Return exact (dot(a,a), dot(b,b), dot(a,b)), each rounded once.
+
+    Finite real 1-D inputs must have equal lengths. Any rounded entry overflowing
+    binary64 raises OverflowError. ``native`` requires the fused kernel; ``auto``
+    also supports older extensions via three exact dots, or the Python reference.
+    Contiguous native float64 buffers need no input copy.
+    """
+    if backend not in ("auto", "python", "native"):
+        raise ValueError("backend must be 'auto', 'python', or 'native'")
+    use_native = backend != "python" and native_gram_available()
+    if backend == "native" and not use_native:
+        raise RuntimeError(
+            "native Gram backend unavailable; install ./native from source"
+        )
+    left, right = np.asarray(a), np.asarray(b)
+    if left.ndim != 1 or right.ndim != 1:
+        raise ValueError("gram_pair requires one-dimensional arrays")
+    if left.size != right.size:
+        raise ValueError("gram_pair requires equal lengths")
+    if left.dtype.kind not in "biuf" or right.dtype.kind not in "biuf":
+        raise TypeError("gram_pair requires real numeric values")
+    left = np.ascontiguousarray(left, dtype=np.float64)
+    right = np.ascontiguousarray(right, dtype=np.float64)
+    if use_native and _kernels is not None:
+        aa, bb, ab = _kernels.gram_pair(left, right)
+        return float(aa), float(bb), float(ab)
+    # Prevalidate both vectors, including with older kernels, so a nonfinite
+    # input takes precedence over a norm overflow in the fallback as well.
+    if not np.isfinite(left).all() or not np.isfinite(right).all():
+        raise ValueError("gram_pair requires finite values")
+    if backend != "python" and native_dot_available() and _kernels is not None:
+        return (
+            float(_kernels.exact_dot(left, left)),
+            float(_kernels.exact_dot(right, right)),
+            float(_kernels.exact_dot(left, right)),
+        )
+    return _python_dot(left, left), _python_dot(right, right), _python_dot(left, right)
+
+
 def _python_dot(a: NDArray[np.float64], b: NDArray[np.float64]) -> float:
     """Integer reference: all finite binary64 products are multiples of 2^-2148."""
     total = 0
