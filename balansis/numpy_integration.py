@@ -1,3 +1,5 @@
+from typing import List, Literal, cast
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -8,9 +10,9 @@
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
 import numpy as np
-from typing import List
-from balansis.core.absolute import AbsoluteValue
+
 from balansis.core._eft import dot2 as _dot2
+from balansis.core.absolute import AbsoluteValue
 
 absolute_struct_dtype = np.dtype([("magnitude", np.float64), ("direction", np.int8)])
 
@@ -31,7 +33,7 @@ def from_numpy(arr: np.ndarray) -> List[AbsoluteValue]:
     for i in range(arr.shape[0]):
         m = float(arr["magnitude"][i])
         d = int(arr["direction"][i])
-        out.append(AbsoluteValue(magnitude=m, direction=d))
+        out.append(AbsoluteValue(magnitude=m, direction=cast(Literal[-1, 1], d)))
     return out
 
 
@@ -103,26 +105,13 @@ def compensated_array_multiply(a: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 
 def compensated_dot_product(a: np.ndarray, b: np.ndarray) -> float:
-    """Correctly rounded dot product (Ogita–Rump–Oishi Dot2).
+    """Exact finite-input dot product, rounded once to binary64.
 
-    A dot product loses precision in two places: each product ``a[i]*b[i]``
-    rounds, and the running sum accumulates error. Kahan/Neumaier summation
-    only fixes the second — for an ill-conditioned dot the *product* rounding
-    dominates, so summation compensation alone recovers nothing.
-
-    This implementation captures every product's exact rounding error with the
-    TwoProduct transform and sums the full set of high/low terms with a single
-    correct rounding (:func:`math.fsum`). The result is accurate to full
-    float64 precision regardless of the condition number, as long as the
-    individual products are finite — matching the whitepaper's stability claim
-    for accumulation-heavy workloads such as large sparse state vectors.
-
-    Args:
-        a: 1-D array (or any shape; will be ravelled), cast to float64.
-        b: Same shape as ``a``.
-
-    Returns:
-        Scalar dot product as Python float.
+    Inputs are cast to float64 and flattened; flattened lengths must match.
+    Finite products accumulate exactly using the optional C kernel or integer
+    Python reference. Individual products may overflow or underflow float64
+    without losing their contribution. Final rounded overflow raises
+    OverflowError. Nonfinite inputs retain NumPy propagation via ``dot2``.
     """
     return _dot2(a, b)
 
@@ -180,4 +169,4 @@ def compensated_softmax(logits: np.ndarray) -> np.ndarray:
         c = (t - s) - y
         s = t
     # After max-shift, at least one exp_val equals 1.0, so s >= 1 always holds.
-    return (exp_vals / s).astype(np.float64)
+    return np.asarray(exp_vals / s, dtype=np.float64)

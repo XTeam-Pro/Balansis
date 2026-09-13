@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Literal, cast
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -13,9 +17,11 @@ except ImportError:
     pa = None
 
 from typing import List
+
 from balansis.core.absolute import AbsoluteValue
 
-def to_record_batch(values: List[AbsoluteValue]):
+
+def to_record_batch(values: List[AbsoluteValue]) -> Any:
     if pa is None:
         raise ImportError("pyarrow not installed")
     mag = [v.magnitude for v in values]
@@ -24,15 +30,20 @@ def to_record_batch(values: List[AbsoluteValue]):
     schema = pa.schema([("magnitude", pa.float64()), ("direction", pa.int8())])
     return pa.RecordBatch.from_arrays(arrays, schema.names)
 
-def to_table(values: List[AbsoluteValue]):
+
+def to_table(values: List[AbsoluteValue]) -> Any:
     if pa is None:
         raise ImportError("pyarrow not installed")
     batch = to_record_batch(values)
     return pa.Table.from_batches([batch])
 
-def from_table(table) -> List[AbsoluteValue]:
+
+def from_table(table: Any) -> List[AbsoluteValue]:
     if pa is None:
         raise ImportError("pyarrow not installed")
     mag = table.column("magnitude").to_pylist()
     dir = table.column("direction").to_pylist()
-    return [AbsoluteValue(magnitude=float(m), direction=int(d)) for m, d in zip(mag, dir)]
+    return [
+        AbsoluteValue(magnitude=float(m), direction=cast(Literal[-1, 1], int(d)))
+        for m, d in zip(mag, dir)
+    ]

@@ -14,7 +14,7 @@ fn add_absolute(m1: f64, d1: i8, m2: f64, d2: i8) -> (f64, i8) {
 }
 
 #[pymodule]
-fn balansis_native(_py: Python, m: &PyModule) -> PyResult<()> {
+fn balansis_native(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(add_absolute, m)?)?;
     Ok(())
 }

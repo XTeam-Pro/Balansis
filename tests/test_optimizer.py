@@ -3,10 +3,11 @@
 import pytest
 
 from balansis import SingularPolicy
-from balansis.ml.optimizer import EternalOptimizer, AdaptiveEternalOptimizer
+from balansis.ml.optimizer import AdaptiveEternalOptimizer, EternalOptimizer
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -101,7 +102,9 @@ class TestEternalOptimizerCreation:
 
     def test_scale_policy_state_saturates_zero_norm(self):
         """Test policy-resolved optimizer scale telemetry."""
-        opt = EternalOptimizer([], lr=2.0, singular_policy=SingularPolicy.SATURATE, saturation_limit=10.0)
+        opt = EternalOptimizer(
+            [], lr=2.0, singular_policy=SingularPolicy.SATURATE, saturation_limit=10.0
+        )
         state, event = opt.scale_policy_state(0.0)
         assert state.is_finite()
         assert state.numerical_value() == 10.0
@@ -112,7 +115,9 @@ class TestEternalOptimizerCreation:
     def test_scale_policy_state_raise_mode(self):
         """Test fail-fast optimizer scale policy."""
         opt = EternalOptimizer([], lr=2.0, singular_policy=SingularPolicy.RAISE)
-        with pytest.raises(ValueError, match="compensated_divide_policy produced singular"):
+        with pytest.raises(
+            ValueError, match="compensated_divide_policy produced singular"
+        ):
             opt.scale_policy_state(0.0)
 
 
@@ -186,6 +191,7 @@ class TestEternalTorchOptimizer:
     def test_creation(self):
         """Test EternalTorchOptimizer creation."""
         from balansis.ml.optimizer import EternalTorchOptimizer
+
         param = torch.nn.Parameter(torch.randn(3))
         opt = EternalTorchOptimizer([param], lr=1e-3)
         assert len(opt.param_groups) == 1
@@ -193,6 +199,7 @@ class TestEternalTorchOptimizer:
     def test_step_basic(self):
         """Test basic step updates parameters."""
         from balansis.ml.optimizer import EternalTorchOptimizer
+
         param = torch.nn.Parameter(torch.tensor([1.0, 2.0]))
         param.grad = torch.tensor([0.1, 0.1])
         opt = EternalTorchOptimizer([param], lr=1e-2)
@@ -203,6 +210,7 @@ class TestEternalTorchOptimizer:
     def test_step_with_closure(self):
         """Test step with closure returns loss."""
         from balansis.ml.optimizer import EternalTorchOptimizer
+
         param = torch.nn.Parameter(torch.tensor([1.0]))
         param.grad = torch.tensor([0.1])
         opt = EternalTorchOptimizer([param], lr=1e-2)
@@ -216,11 +224,10 @@ class TestEternalTorchOptimizer:
     def test_step_with_momentum_and_weight_decay(self):
         """Test step with momentum and weight decay."""
         from balansis.ml.optimizer import EternalTorchOptimizer
+
         param = torch.nn.Parameter(torch.tensor([5.0, 5.0]))
         param.grad = torch.tensor([1.0, 1.0])
-        opt = EternalTorchOptimizer(
-            [param], lr=1e-2, momentum=0.9, weight_decay=0.01
-        )
+        opt = EternalTorchOptimizer([param], lr=1e-2, momentum=0.9, weight_decay=0.01)
         opt.step()
         opt.step()
         state = opt.state[param]
@@ -230,10 +237,9 @@ class TestEternalTorchOptimizer:
     def test_creation_with_all_params(self):
         """Test EternalTorchOptimizer with all parameters."""
         from balansis.ml.optimizer import EternalTorchOptimizer
+
         param = torch.nn.Parameter(torch.randn(3))
-        opt = EternalTorchOptimizer(
-            [param], lr=0.01, momentum=0.9, weight_decay=1e-4
-        )
+        opt = EternalTorchOptimizer([param], lr=0.01, momentum=0.9, weight_decay=1e-4)
         group = opt.param_groups[0]
         assert group["lr"] == 0.01
         assert group["momentum"] == 0.9
@@ -254,9 +260,14 @@ class TestAdaptiveEternalOptimizerCreation:
     def test_creation_custom_params(self):
         """Test optimizer creation with custom parameters."""
         opt = AdaptiveEternalOptimizer(
-            [], lr=0.01, betas=(0.8, 0.99), eps=1e-7,
-            weight_decay=0.01, max_grad_norm=5.0,
-            warmup_steps=100, total_steps=1000,
+            [],
+            lr=0.01,
+            betas=(0.8, 0.99),
+            eps=1e-7,
+            weight_decay=0.01,
+            max_grad_norm=5.0,
+            warmup_steps=100,
+            total_steps=1000,
         )
         assert opt.param_groups[0]["lr"] == 0.01
         assert opt.param_groups[0]["betas"] == (0.8, 0.99)
@@ -314,7 +325,9 @@ class TestAdaptiveEternalOptimizerCreation:
 
     def test_clip_policy_state_saturates_zero_norm(self):
         """Test policy-resolved clipping telemetry."""
-        opt = AdaptiveEternalOptimizer([], max_grad_norm=2.0, singular_policy="saturate", saturation_limit=8.0)
+        opt = AdaptiveEternalOptimizer(
+            [], max_grad_norm=2.0, singular_policy="saturate", saturation_limit=8.0
+        )
         state, event = opt.clip_policy_state(0.0)
         assert state.is_finite()
         assert state.numerical_value() == 8.0
@@ -342,15 +355,13 @@ class TestAdaptiveEternalOptimizerWithTorch:
     def test_convergence_quadratic(self):
         """Test convergence on simple quadratic f(x) = ||x||^2."""
         x = torch.nn.Parameter(torch.tensor([5.0, 5.0]))
-        opt = AdaptiveEternalOptimizer(
-            [x], lr=0.1, max_grad_norm=0.0
-        )
+        opt = AdaptiveEternalOptimizer([x], lr=0.1, max_grad_norm=0.0)
 
         for _ in range(300):
             x.grad = 2.0 * x.data.clone()
             opt.step()
 
-        loss = (x.data ** 2).sum().item()
+        loss = (x.data**2).sum().item()
         assert loss < 0.01, f"Failed to converge: loss={loss}"
 
     def test_gradient_clipping(self):
@@ -377,16 +388,17 @@ class TestAdaptiveEternalOptimizerWithTorch:
         """Test learning rate warmup schedule."""
         opt = AdaptiveEternalOptimizer(
             [torch.nn.Parameter(torch.tensor([1.0]))],
-            lr=0.1, warmup_steps=10,
+            lr=0.1,
+            warmup_steps=10,
         )
 
         # During warmup: linear scale from 0.1 to 1.0
         for i in range(10):
             expected = (i + 1) / 10.0
             actual = opt._get_lr_scale(i)
-            assert abs(actual - expected) < 1e-10, (
-                f"step={i}: expected={expected}, actual={actual}"
-            )
+            assert (
+                abs(actual - expected) < 1e-10
+            ), f"step={i}: expected={expected}, actual={actual}"
 
         # After warmup with no decay: scale should be 1.0
         for i in range(10, 15):
@@ -396,7 +408,9 @@ class TestAdaptiveEternalOptimizerWithTorch:
         """Test cosine decay after warmup."""
         opt = AdaptiveEternalOptimizer(
             [torch.nn.Parameter(torch.tensor([1.0]))],
-            lr=0.1, warmup_steps=10, total_steps=110,
+            lr=0.1,
+            warmup_steps=10,
+            total_steps=110,
         )
 
         # At start of decay (step 10): scale ~ 1.0
@@ -416,10 +430,13 @@ class TestAdaptiveEternalOptimizerWithTorch:
         p1 = torch.nn.Parameter(torch.tensor([5.0]))
         p2 = torch.nn.Parameter(torch.tensor([5.0]))
 
-        opt = AdaptiveEternalOptimizer([
-            {"params": [p1], "lr": 0.1, "weight_decay": 0.0},
-            {"params": [p2], "lr": 0.01, "weight_decay": 0.0},
-        ], max_grad_norm=0.0)
+        opt = AdaptiveEternalOptimizer(
+            [
+                {"params": [p1], "lr": 0.1, "weight_decay": 0.0},
+                {"params": [p2], "lr": 0.01, "weight_decay": 0.0},
+            ],
+            max_grad_norm=0.0,
+        )
 
         assert len(opt.param_groups) == 2
         assert opt.param_groups[0]["lr"] == 0.1
@@ -439,9 +456,7 @@ class TestAdaptiveEternalOptimizerWithTorch:
         x2 = torch.nn.Parameter(torch.tensor([3.0, 3.0]))
 
         opt1 = EternalOptimizer([x1], lr=0.1)
-        opt2 = AdaptiveEternalOptimizer(
-            [x2], lr=0.1, max_grad_norm=0.0
-        )
+        opt2 = AdaptiveEternalOptimizer([x2], lr=0.1, max_grad_norm=0.0)
 
         for _ in range(300):
             x1.grad = 2.0 * x1.data.clone()
@@ -449,8 +464,8 @@ class TestAdaptiveEternalOptimizerWithTorch:
             opt1.step()
             opt2.step()
 
-        loss1 = (x1.data ** 2).sum().item()
-        loss2 = (x2.data ** 2).sum().item()
+        loss1 = (x1.data**2).sum().item()
+        loss2 = (x2.data**2).sum().item()
         # Both should converge; adaptive should be at least comparable
         assert loss1 < 1.0, f"EternalOptimizer failed: {loss1}"
         assert loss2 < 1.0, f"AdaptiveEternalOptimizer failed: {loss2}"

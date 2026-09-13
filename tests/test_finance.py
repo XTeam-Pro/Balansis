@@ -1,5 +1,7 @@
 from decimal import Decimal
+
 from balansis.finance.ledger import Ledger
+
 
 def test_double_entry_zero_sum():
     l = Ledger()

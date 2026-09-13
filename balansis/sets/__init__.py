@@ -8,5 +8,5 @@
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
 from .eternal_set import EternalSet
+from .generators import grandis_generator, harmonic_generator
 from .resolver import global_compensate, verify_zero_sum
-from .generators import harmonic_generator, grandis_generator

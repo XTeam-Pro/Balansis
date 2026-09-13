@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -7,40 +9,59 @@
 #
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
-from decimal import Decimal, getcontext
-from typing import List, Dict, Tuple
+from decimal import Decimal, localcontext
+from typing import List, Literal, cast
+
 from balansis.core.absolute import AbsoluteValue
 
-getcontext().prec = 50
 
 class LedgerEntry:
-    def __init__(self, account: str, amount: AbsoluteValue, memo: str = ""):
+    def __init__(self, account: str, amount: AbsoluteValue, memo: str = "") -> None:
         self.account = account
         self.amount = amount
         self.memo = memo
+        self.decimal_amount = Decimal(str(amount.to_float()))
+
 
 class Ledger:
-    def __init__(self):
+    def __init__(self) -> None:
         self.entries: List[LedgerEntry] = []
 
-    def post_entry(self, account: str, amount: Decimal, memo: str = ""):
+    def post_entry(self, account: str, amount: Decimal, memo: str = "") -> None:
+        if not amount.is_finite():
+            raise ValueError("Ledger amounts must be finite")
         sign = 1 if amount >= 0 else -1
-        value = AbsoluteValue(magnitude=abs(float(amount)), direction=sign)
-        self.entries.append(LedgerEntry(account, value, memo))
+        value = AbsoluteValue(
+            magnitude=abs(float(amount)), direction=cast(Literal[-1, 1], sign)
+        )
+        entry = LedgerEntry(account, value, memo)
+        entry.decimal_amount = amount
+        self.entries.append(entry)
 
-    def transfer(self, debit_account: str, credit_account: str, amount: Decimal, memo: str = ""):
+    def transfer(
+        self, debit_account: str, credit_account: str, amount: Decimal, memo: str = ""
+    ) -> None:
         self.post_entry(debit_account, amount, memo)
-        self.post_entry(credit_account, -amount, memo)
+        self.post_entry(credit_account, amount.copy_negate(), memo)
+
+    def decimal_balance(self, account: str | None = None) -> Decimal:
+        amounts = [
+            entry.decimal_amount
+            for entry in self.entries
+            if account is None or entry.account == account
+        ]
+        if not amounts:
+            return Decimal(0)
+        minimum_exponent = min(int(amount.as_tuple().exponent) for amount in amounts)
+        maximum_adjusted = max(amount.adjusted() for amount in amounts)
+        with localcontext() as context:
+            context.prec = max(
+                50, maximum_adjusted - minimum_exponent + len(str(len(amounts))) + 2
+            )
+            return sum(amounts, Decimal(0))
 
     def balance(self) -> AbsoluteValue:
-        total = AbsoluteValue.absolute()
-        for e in self.entries:
-            total = total + e.amount
-        return total
+        return AbsoluteValue.from_float(float(self.decimal_balance()))
 
     def account_balance(self, account: str) -> AbsoluteValue:
-        total = AbsoluteValue.absolute()
-        for e in self.entries:
-            if e.account == account:
-                total = total + e.amount
-        return total
+        return AbsoluteValue.from_float(float(self.decimal_balance(account)))

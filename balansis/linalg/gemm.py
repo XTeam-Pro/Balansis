@@ -15,6 +15,7 @@ and Neumaier (improved Kahan-Babuška) summation. The result is returned
 together with a scalar compensation factor that aggregates the worst-case
 per-cell compensation observed during the computation.
 """
+
 from __future__ import annotations
 
 from typing import List, Tuple

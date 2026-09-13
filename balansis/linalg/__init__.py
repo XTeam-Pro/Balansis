@@ -16,9 +16,10 @@ Public API:
     CompensatedQRResult — structured QR result with diagnostics
     CompensatedSVDResult — structured SVD result with diagnostics
 """
+
 from .gemm import matmul
-from .qr import qr_decompose, CompensatedQRResult
-from .svd import svd, CompensatedSVDResult
+from .qr import CompensatedQRResult, qr_decompose
+from .svd import CompensatedSVDResult, svd
 
 __all__ = [
     "matmul",

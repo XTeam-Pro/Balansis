@@ -1,5 +1,6 @@
 import math
 import pickle
+
 import pytest
 
 from balansis.core.absolute import AbsoluteValue

@@ -1,25 +1,8 @@
-"""TNSIM (Theory of Zero-Sum Infinite Sets).
-
-Library for working with compensated infinite sets,
-implementing principles of zero-sum and numerical stability.
-
-Main components:
-- ZeroSumInfiniteSet: Class for working with infinite sets
-- TNSIMCache: Operation caching system
-- ParallelTNSIM: Parallel computations
-- ZeroSumAttention: Neural network integration
-- FastAPI application for web interface
-
-Usage example:
-    >>> from tnsim import ZeroSumInfiniteSet
-    >>> zs_set = ZeroSumInfiniteSet.create_harmonic_series(100)
-    >>> result = zs_set.zero_sum_operation()
-    >>> print(f"Result: {result}")
-"""
+"""Finite Decimal series, compensation, caching and a FastAPI service."""
 
 # Package version
-__version__ = "1.0.0"
-__author__ = "TNSIM Team"
+__version__ = "1.1.0"
+__author__ = "Andrey Tikhonov"
 __email__ = "andrew@xteam.pro"
 __description__ = "Theory of Zero-Sum Infinite Sets"
 __url__ = "https://github.com/StudyLabPro/Balansis"
@@ -28,15 +11,16 @@ __license__ = "AGPL-3.0 / Commercial via parent Balansis repository"
 # Import main classes
 try:
     from .core import (
-        ZeroSumInfiniteSet,
-        TNSIMCache,
         ParallelTNSIM,
+        TNSIMCache,
+        ZeroSumInfiniteSet,
         cached_operation,
         get_global_cache,
         get_global_parallel_processor,
     )
 except ImportError as e:
     import warnings
+
     warnings.warn(f"Failed to import main classes: {e}")
     ZeroSumInfiniteSet = None
     TNSIMCache = None
@@ -47,25 +31,20 @@ except ImportError as e:
 
 # Import integrations
 try:
-    from .integrations import (
-        ZeroSumAttention,
-        BalansisCompensator,
-    )
+    from .integrations import BalansisCompensator, ZeroSumAttention
 except ImportError as e:
     import warnings
+
     warnings.warn(f"Failed to import integrations: {e}")
     ZeroSumAttention = None
     BalansisCompensator = None
 
 # Import database configuration
 try:
-    from .database import (
-        DatabaseConfig,
-        db_config,
-        get_config,
-    )
+    from .database import DatabaseConfig, db_config, get_config
 except ImportError as e:
     import warnings
+
     warnings.warn(f"Failed to import database configuration: {e}")
     DatabaseConfig = None
     db_config = None
@@ -80,7 +59,6 @@ __all__ = [
     "__description__",
     "__url__",
     "__license__",
-    
     # Main classes
     "ZeroSumInfiniteSet",
     "TNSIMCache",
@@ -88,16 +66,13 @@ __all__ = [
     "cached_operation",
     "get_global_cache",
     "get_global_parallel_processor",
-    
     # Integrations
     "ZeroSumAttention",
     "BalansisCompensator",
-    
     # Database
     "DatabaseConfig",
     "db_config",
     "get_config",
-    
     # Utilities
     "create_harmonic_series",
     "create_alternating_series",
@@ -106,13 +81,14 @@ __all__ = [
     "get_version_info",
 ]
 
+
 # Utility functions
-def create_harmonic_series(n_terms: int = 1000) -> 'ZeroSumInfiniteSet':
+def create_harmonic_series(n_terms: int = 1000) -> "ZeroSumInfiniteSet":
     """Create a harmonic series.
-    
+
     Args:
         n_terms: Number of elements to generate
-        
+
     Returns:
         ZeroSumInfiniteSet: Harmonic series object
     """
@@ -120,12 +96,13 @@ def create_harmonic_series(n_terms: int = 1000) -> 'ZeroSumInfiniteSet':
         raise ImportError("ZeroSumInfiniteSet is not available")
     return ZeroSumInfiniteSet.create_harmonic_series(n_terms)
 
-def create_alternating_series(n_terms: int = 1000) -> 'ZeroSumInfiniteSet':
+
+def create_alternating_series(n_terms: int = 1000) -> "ZeroSumInfiniteSet":
     """Create an alternating series.
-    
+
     Args:
         n_terms: Number of elements to generate
-        
+
     Returns:
         ZeroSumInfiniteSet: Alternating series object
     """
@@ -133,13 +110,16 @@ def create_alternating_series(n_terms: int = 1000) -> 'ZeroSumInfiniteSet':
         raise ImportError("ZeroSumInfiniteSet is not available")
     return ZeroSumInfiniteSet.create_alternating_series(n_terms)
 
-def create_geometric_series(ratio: float = 0.5, n_terms: int = 1000) -> 'ZeroSumInfiniteSet':
+
+def create_geometric_series(
+    ratio: float = 0.5, n_terms: int = 1000
+) -> "ZeroSumInfiniteSet":
     """Create a geometric series.
-    
+
     Args:
         ratio: Common ratio of the progression
         n_terms: Number of elements to generate
-        
+
     Returns:
         ZeroSumInfiniteSet: Geometric series object
     """
@@ -147,9 +127,10 @@ def create_geometric_series(ratio: float = 0.5, n_terms: int = 1000) -> 'ZeroSum
         raise ImportError("ZeroSumInfiniteSet is not available")
     return ZeroSumInfiniteSet.create_geometric_series(ratio, n_terms)
 
-def run_server(host: str = "0.0.0.0", port: int = 8000, **kwargs):
+
+def run_server(host: str = "127.0.0.1", port: int = 8000, **kwargs):
     """Start FastAPI server.
-    
+
     Args:
         host: Host to bind to
         port: Port to bind to
@@ -157,33 +138,30 @@ def run_server(host: str = "0.0.0.0", port: int = 8000, **kwargs):
     """
     try:
         import uvicorn
+
         from .api.main import app
-        
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            **kwargs
-        )
+
+        uvicorn.run(app, host=host, port=port, **kwargs)
     except ImportError:
         raise ImportError("uvicorn and FastAPI are required to run the server")
 
+
 def get_version_info() -> dict:
     """Get version and dependency information.
-    
+
     Returns:
         dict: Dictionary with version information
     """
-    import sys
     import platform
-    
+    import sys
+
     info = {
         "tnsim_version": __version__,
         "python_version": sys.version,
         "platform": platform.platform(),
         "architecture": platform.architecture(),
     }
-    
+
     # Check availability of main dependencies
     dependencies = {
         "numpy": None,
@@ -192,16 +170,16 @@ def get_version_info() -> dict:
         "fastapi": None,
         "asyncpg": None,
     }
-    
+
     for dep in dependencies:
         try:
             module = __import__(dep)
             dependencies[dep] = getattr(module, "__version__", "unknown")
         except ImportError:
             dependencies[dep] = "not installed"
-    
+
     info["dependencies"] = dependencies
-    
+
     # Check availability of TNSIM components
     components = {
         "ZeroSumInfiniteSet": ZeroSumInfiniteSet is not None,
@@ -211,10 +189,11 @@ def get_version_info() -> dict:
         "BalansisCompensator": BalansisCompensator is not None,
         "DatabaseConfig": DatabaseConfig is not None,
     }
-    
+
     info["components"] = components
-    
+
     return info
+
 
 # Logging setup
 import logging
@@ -224,39 +203,8 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 # Python compatibility check
 import sys
 
-if sys.version_info < (3, 9):
+if sys.version_info < (3, 10):
     raise RuntimeError(
-        f"TNSIM requires Python 3.9 or higher. "
+        f"TNSIM requires Python 3.10 or higher. "
         f"Current version: {sys.version_info.major}.{sys.version_info.minor}"
     )
-
-# Initialization on import
-def _initialize():
-    """Initialize package on import."""
-    # Default logging setup
-    import os
-    
-    log_level = os.getenv("TNSIM_LOG_LEVEL", "INFO").upper()
-    
-    logging.basicConfig(
-        level=getattr(logging, log_level, logging.INFO),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    
-    # Check environment variables
-    required_env_vars = [
-        "DATABASE_URL",
-    ]
-    
-    missing_vars = []
-    for var in required_env_vars:
-        if not os.getenv(var):
-            missing_vars.append(var)
-    
-    if missing_vars and os.getenv("TNSIM_STRICT_ENV", "false").lower() == "true":
-        raise EnvironmentError(
-            f"Missing required environment variables: {missing_vars}"
-        )
-
-# Execute initialization
-_initialize()

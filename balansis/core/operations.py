@@ -15,20 +15,25 @@ are designed around the Absolute Compensation Theory (ACT) principles.
 """
 
 import math
-from typing import List, Optional, Tuple, Union
-from decimal import getcontext
+from typing import List, Literal, Optional, Tuple, Union, cast
 
 from .absolute import AbsoluteValue
-from .eternity import EternalRatio, ExtendedRatio, SingularArithmeticEvent, SingularPolicy
+from .eternity import (
+    EternalRatio,
+    ExtendedRatio,
+    SingularArithmeticEvent,
+    SingularPolicy,
+)
 
 # Set high precision for decimal operations
-getcontext().prec = 50
 
 # Type aliases for clarity
 NumericType = Union[float, int, AbsoluteValue, EternalRatio, ExtendedRatio]
 CompensatedResult = Tuple[AbsoluteValue, float]  # (result, compensation_factor)
 CompensatedDivideResult = Tuple[EternalRatio, float]  # (ratio, compensation_factor)
-ExtendedDivideResult = Tuple[ExtendedRatio, float]  # (extended ratio, compensation_factor)
+ExtendedDivideResult = Tuple[
+    ExtendedRatio, float
+]  # (extended ratio, compensation_factor)
 PolicyDivideResult = Tuple[ExtendedRatio, float, Optional[SingularArithmeticEvent]]
 
 
@@ -53,49 +58,47 @@ class Operations:
     MAX_COMPENSATION_ITERATIONS = 100
 
     @staticmethod
-    def compensated_add(a: AbsoluteValue, b: AbsoluteValue,
-                        compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_add(
+        a: AbsoluteValue, b: AbsoluteValue, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Perform compensated addition of two AbsoluteValues.
 
-        Detects near-cancellation when the operands are opposite in direction
-        and very close in magnitude (relative threshold). In that case the
-        residual ULP is preserved as a tiny positive magnitude with the
-        winning direction, so the result is never exactly Absolute when the
-        true mathematical difference is non-zero (which protects downstream
-        divisions and log operations from spurious singularities).
+        Opposite operands with equal represented magnitudes cancel to Absolute.
+        Distinct, nearly equal magnitudes retain their represented difference.
+        Information rounded away before construction cannot be recovered here.
+
+        The compensation factor is a diagnostic, not an additive correction or
+        a rigorous error bound. Exact cancellation retains the
+        legacy ``compensation_factor * STABILITY_FACTOR`` diagnostic; nonzero
+        near-cancellation scales it by the ratio of magnitude to difference.
         """
         # Detect catastrophic cancellation: opposite directions and close magnitudes.
-        # Operands that lie above the float64 representable-integer threshold (2^53 ~ 9e15)
-        # may be reported as equal by Python even when their true mathematical
-        # difference is non-zero. We preserve a ULP-scale residual to keep the
-        # result informative.
         if a.direction != b.direction and a.magnitude > 0 and b.magnitude > 0:
             larger = max(a.magnitude, b.magnitude)
             diff = abs(a.magnitude - b.magnitude)
             if a.magnitude == b.magnitude:
-                # If the operands were constructed from values large enough to
-                # lose precision (above 2^53), the float64 equality may hide a
-                # true 1-ULP difference. Preserve a residual so downstream code
-                # doesn't see a spurious Absolute.
-                if larger > 9.0e15:
-                    residual = math.ulp(larger)
-                    winner = a.direction
-                    return AbsoluteValue(magnitude=residual, direction=winner), \
-                        compensation_factor * (larger / residual)
-                return AbsoluteValue.absolute(), compensation_factor * Operations.STABILITY_FACTOR
+                return (
+                    AbsoluteValue.absolute(),
+                    compensation_factor * Operations.STABILITY_FACTOR,
+                )
             # Near-cancellation is only meaningful when both operands are far above
             # the compensation threshold. Otherwise we treat the result as Absolute.
             if larger >= 1.0 and diff <= Operations.COMPENSATION_THRESHOLD * larger:
                 residual = diff
                 winner = a.direction if a.magnitude >= b.magnitude else b.direction
-                compensation = compensation_factor * (larger / max(residual, Operations.COMPENSATION_THRESHOLD))
+                compensation = compensation_factor * (
+                    larger / max(residual, Operations.COMPENSATION_THRESHOLD)
+                )
                 return AbsoluteValue(magnitude=residual, direction=winner), compensation
 
         # Standard addition
         result = a + b
 
         # Result genuinely underflowed
-        if result.magnitude < Operations.COMPENSATION_THRESHOLD and result.magnitude > 0.0:
+        if (
+            result.magnitude < Operations.COMPENSATION_THRESHOLD
+            and result.magnitude > 0.0
+        ):
             compensated_result = AbsoluteValue.absolute()
             applied_compensation = result.magnitude / Operations.COMPENSATION_THRESHOLD
             return compensated_result, applied_compensation
@@ -103,8 +106,9 @@ class Operations:
         return result, 1.0
 
     @staticmethod
-    def compensated_multiply(a: AbsoluteValue, b: AbsoluteValue,
-                             compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_multiply(
+        a: AbsoluteValue, b: AbsoluteValue, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Perform compensated multiplication of two AbsoluteValues."""
         if a.is_absolute() or b.is_absolute():
             return AbsoluteValue.absolute(), 0.0
@@ -113,39 +117,70 @@ class Operations:
             result_magnitude = a.magnitude * b.magnitude
             if math.isinf(result_magnitude):
                 # Both factors finite but product overflowed float64 range
-                log_compensation = math.log10(a.magnitude) + math.log10(b.magnitude) - 100.0
-                return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD,
-                                     direction=a.direction * b.direction), log_compensation
+                log_compensation = (
+                    math.log10(a.magnitude) + math.log10(b.magnitude) - 100.0
+                )
+                return (
+                    AbsoluteValue(
+                        magnitude=Operations.OVERFLOW_THRESHOLD,
+                        direction=cast(Literal[-1, 1], a.direction * b.direction),
+                    ),
+                    log_compensation,
+                )
         except OverflowError:
             log_compensation = math.log10(a.magnitude) + math.log10(b.magnitude) - 100.0
-            return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD,
-                                 direction=a.direction * b.direction), log_compensation
+            return (
+                AbsoluteValue(
+                    magnitude=Operations.OVERFLOW_THRESHOLD,
+                    direction=cast(Literal[-1, 1], a.direction * b.direction),
+                ),
+                log_compensation,
+            )
 
         result_direction = a.direction * b.direction
 
         if result_magnitude > Operations.OVERFLOW_THRESHOLD:
             log_compensation = math.log10(result_magnitude) - 100.0
-            return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD,
-                                 direction=result_direction), log_compensation
+            return (
+                AbsoluteValue(
+                    magnitude=Operations.OVERFLOW_THRESHOLD,
+                    direction=cast(Literal[-1, 1], result_direction),
+                ),
+                log_compensation,
+            )
 
         if result_magnitude < Operations.COMPENSATION_THRESHOLD:
             # Underflow: preserve the lost magnitude in the compensation factor
             return AbsoluteValue.absolute(), result_magnitude
 
-        return AbsoluteValue(magnitude=result_magnitude, direction=result_direction), 1.0
+        return (
+            AbsoluteValue(
+                magnitude=result_magnitude,
+                direction=cast(Literal[-1, 1], result_direction),
+            ),
+            1.0,
+        )
 
     @staticmethod
-    def compensated_divide(numerator: AbsoluteValue, denominator: AbsoluteValue,
-                           compensation_factor: float = 1.0) -> CompensatedDivideResult:
+    def compensated_divide(
+        numerator: AbsoluteValue,
+        denominator: AbsoluteValue,
+        compensation_factor: float = 1.0,
+    ) -> CompensatedDivideResult:
         """Perform compensated division using EternalRatio."""
         if denominator.is_absolute():
-            raise ValueError('Cannot divide by Absolute (denominator magnitude=0)')
+            raise ValueError("Cannot divide by Absolute (denominator magnitude=0)")
 
         applied_compensation = 1.0
         if denominator.magnitude < Operations.COMPENSATION_THRESHOLD:
-            applied_compensation = denominator.magnitude / Operations.COMPENSATION_THRESHOLD
+            applied_compensation = (
+                denominator.magnitude / Operations.COMPENSATION_THRESHOLD
+            )
 
-        return EternalRatio(numerator=numerator, denominator=denominator), applied_compensation
+        return (
+            EternalRatio(numerator=numerator, denominator=denominator),
+            applied_compensation,
+        )
 
     @staticmethod
     def compensated_divide_extended(
@@ -166,11 +201,16 @@ class Operations:
                 compensation_factor,
                 1.0 / Operations.COMPENSATION_THRESHOLD,
             )
-            return ExtendedRatio.from_division(numerator, denominator), singular_compensation
+            return (
+                ExtendedRatio.from_division(numerator, denominator),
+                singular_compensation,
+            )
 
         applied_compensation = 1.0
         if denominator.magnitude < Operations.COMPENSATION_THRESHOLD:
-            applied_compensation = denominator.magnitude / Operations.COMPENSATION_THRESHOLD
+            applied_compensation = (
+                denominator.magnitude / Operations.COMPENSATION_THRESHOLD
+            )
 
         finite_ratio = EternalRatio(numerator=numerator, denominator=denominator)
         return ExtendedRatio.from_ratio(finite_ratio), applied_compensation
@@ -198,10 +238,13 @@ class Operations:
         return resolved, applied_compensation, event
 
     @staticmethod
-    def compensated_power(base: AbsoluteValue, exponent: float,
-                          compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_power(
+        base: AbsoluteValue, exponent: float, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Perform compensated exponentiation with overflow/underflow protection."""
-        is_integer_exp = (exponent == int(exponent))
+        if not math.isfinite(exponent):
+            raise ValueError("Exponent must be finite")
+        is_integer_exp = exponent == int(exponent)
 
         if base.is_absolute():
             if exponent == 0:
@@ -209,14 +252,14 @@ class Operations:
             if exponent > 0:
                 if not is_integer_exp:
                     raise ValueError(
-                        'Cannot raise Absolute to non-integer power; exponent must be integer'
+                        "Cannot raise Absolute to non-integer power; exponent must be integer"
                     )
                 return AbsoluteValue.absolute(), 0.0
             # Negative exponent on Absolute: invert zero is undefined.
             # Message satisfies both 'Cannot raise Absolute to negative power' and
             # 'Cannot invert zero magnitude' regex tests.
             raise ValueError(
-                'Cannot raise Absolute to negative power: Cannot invert zero magnitude'
+                "Cannot raise Absolute to negative power: Cannot invert zero magnitude"
             )
 
         if exponent == 0:
@@ -236,44 +279,67 @@ class Operations:
 
         # Compute magnitude with overflow detection via logs
         try:
-            log_mag = math.log10(base.magnitude) * exponent if base.magnitude > 0 else float('-inf')
+            log_mag = (
+                math.log10(base.magnitude) * exponent
+                if base.magnitude > 0
+                else float("-inf")
+            )
         except (ValueError, OverflowError):
-            log_mag = float('-inf')
+            log_mag = float("-inf")
 
         # Overflow check via log domain
         if log_mag > 100.0:
             log_compensation = log_mag - 100.0
-            return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD,
-                                 direction=result_direction), log_compensation
+            return (
+                AbsoluteValue(
+                    magnitude=Operations.OVERFLOW_THRESHOLD, direction=result_direction
+                ),
+                log_compensation,
+            )
 
         # Underflow check via log domain (catastrophic)
         if log_mag < -300.0:
             # Magnitude rounds to 0 in float64; keep compensation info
-            return AbsoluteValue.absolute(), max(log_mag, -1e300)
+            return AbsoluteValue.absolute(), min(-log_mag, 1e300)
 
         try:
-            result_magnitude = base.magnitude ** exponent
+            result_magnitude = base.magnitude**exponent
         except OverflowError:
             log_compensation = log_mag - 100.0
-            return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD,
-                                 direction=result_direction), log_compensation
+            return (
+                AbsoluteValue(
+                    magnitude=Operations.OVERFLOW_THRESHOLD, direction=result_direction
+                ),
+                log_compensation,
+            )
 
-        if math.isinf(result_magnitude) or result_magnitude > Operations.OVERFLOW_THRESHOLD:
+        if (
+            math.isinf(result_magnitude)
+            or result_magnitude > Operations.OVERFLOW_THRESHOLD
+        ):
             log_compensation = log_mag - 100.0
-            return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD,
-                                 direction=result_direction), log_compensation
+            return (
+                AbsoluteValue(
+                    magnitude=Operations.OVERFLOW_THRESHOLD, direction=result_direction
+                ),
+                log_compensation,
+            )
 
         if result_magnitude < Operations.COMPENSATION_THRESHOLD:
             return AbsoluteValue.absolute(), result_magnitude
 
-        return AbsoluteValue(magnitude=result_magnitude, direction=result_direction), 1.0
+        return (
+            AbsoluteValue(magnitude=result_magnitude, direction=result_direction),
+            1.0,
+        )
 
     @staticmethod
-    def compensated_sqrt(value: AbsoluteValue,
-                         compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_sqrt(
+        value: AbsoluteValue, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Perform compensated square root operation."""
         if value.direction < 0:
-            raise ValueError('Cannot take square root of negative AbsoluteValue')
+            raise ValueError("Cannot take square root of negative AbsoluteValue")
 
         if value.is_absolute():
             return AbsoluteValue.absolute(), 0.0
@@ -282,17 +348,18 @@ class Operations:
         return AbsoluteValue(magnitude=result_magnitude, direction=1), 1.0
 
     @staticmethod
-    def compensated_log(value: AbsoluteValue, base: float = math.e,
-                        compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_log(
+        value: AbsoluteValue, base: float = math.e, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Perform compensated logarithm operation."""
         if value.is_absolute():
-            raise ValueError('Cannot take logarithm of Absolute')
+            raise ValueError("Cannot take logarithm of Absolute")
 
         if value.direction < 0:
-            raise ValueError('Cannot take logarithm of negative AbsoluteValue')
+            raise ValueError("Cannot take logarithm of negative AbsoluteValue")
 
         if base <= 0 or base == 1:
-            raise ValueError('Logarithm base must be positive and not equal to 1')
+            raise ValueError("Logarithm base must be positive and not equal to 1")
 
         if base == math.e:
             log_value = math.log(value.magnitude)
@@ -302,8 +369,9 @@ class Operations:
         return AbsoluteValue.from_float(log_value), 1.0
 
     @staticmethod
-    def compensated_exp(value: AbsoluteValue,
-                        compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_exp(
+        value: AbsoluteValue, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Perform compensated exponential operation."""
         if value.is_absolute():
             return AbsoluteValue.unit_positive(), 1.0
@@ -313,19 +381,29 @@ class Operations:
 
             if exp_value > Operations.OVERFLOW_THRESHOLD:
                 # Logarithmic compensation: log(true_value) - log(clamped_value)
-                log_compensation = value.to_float() - math.log(Operations.OVERFLOW_THRESHOLD)
-                return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD,
-                                     direction=1), log_compensation
+                log_compensation = value.to_float() - math.log(
+                    Operations.OVERFLOW_THRESHOLD
+                )
+                return (
+                    AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD, direction=1),
+                    log_compensation,
+                )
 
             return AbsoluteValue(magnitude=exp_value, direction=1), 1.0
 
         except OverflowError:
-            log_compensation = value.to_float() - math.log(Operations.OVERFLOW_THRESHOLD)
-            return AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD, direction=1), log_compensation
+            log_compensation = value.to_float() - math.log(
+                Operations.OVERFLOW_THRESHOLD
+            )
+            return (
+                AbsoluteValue(magnitude=Operations.OVERFLOW_THRESHOLD, direction=1),
+                log_compensation,
+            )
 
     @staticmethod
-    def compensated_sin(value: AbsoluteValue,
-                        compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_sin(
+        value: AbsoluteValue, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Compensated sine: sin(Absolute) = Absolute."""
         if value.is_absolute():
             return AbsoluteValue.absolute(), 0.0
@@ -334,8 +412,9 @@ class Operations:
         return AbsoluteValue.from_float(sin_value), 1.0
 
     @staticmethod
-    def compensated_cos(value: AbsoluteValue,
-                        compensation_factor: float = 1.0) -> CompensatedResult:
+    def compensated_cos(
+        value: AbsoluteValue, compensation_factor: float = 1.0
+    ) -> CompensatedResult:
         """Compensated cosine. Mathematically cos(0) = 1, so Absolute maps to UNIT_POSITIVE."""
         if value.is_absolute():
             return AbsoluteValue.unit_positive(), 1.0
@@ -344,8 +423,9 @@ class Operations:
         return AbsoluteValue.from_float(cos_value), 1.0
 
     @staticmethod
-    def sequence_sum(values: List[AbsoluteValue],
-                     use_compensation: bool = True) -> CompensatedResult:
+    def sequence_sum(
+        values: List[AbsoluteValue], use_compensation: bool = True
+    ) -> CompensatedResult:
         """Calculate compensated sum using Kahan-style summation.
 
         Compensation factor semantics:
@@ -388,8 +468,9 @@ class Operations:
         return result, applied_compensation
 
     @staticmethod
-    def sequence_product(values: List[AbsoluteValue],
-                         use_compensation: bool = True) -> CompensatedResult:
+    def sequence_product(
+        values: List[AbsoluteValue], use_compensation: bool = True
+    ) -> CompensatedResult:
         """Calculate compensated product of a sequence of AbsoluteValues."""
         if not values:
             return AbsoluteValue.unit_positive(), 1.0
@@ -410,17 +491,18 @@ class Operations:
             else:
                 result = AbsoluteValue(
                     magnitude=result.magnitude * value.magnitude,
-                    direction=result.direction * value.direction,
+                    direction=cast(Literal[-1, 1], result.direction * value.direction),
                 )
 
         return result, total_compensation
 
     @staticmethod
-    def interpolate(start: AbsoluteValue, end: AbsoluteValue,
-                    t: float) -> AbsoluteValue:
+    def interpolate(
+        start: AbsoluteValue, end: AbsoluteValue, t: float
+    ) -> AbsoluteValue:
         """Perform linear interpolation between two AbsoluteValues."""
         if not (0.0 <= t <= 1.0):
-            raise ValueError('Interpolation parameter t must be in [0, 1] range')
+            raise ValueError("Interpolation parameter t must be in [0, 1] range")
 
         if t == 0.0:
             return start
@@ -456,6 +538,8 @@ class Operations:
         if value.magnitude == 0.0:
             # Single message satisfies tests matching 'Cannot normalize Absolute value',
             # 'absolute' (lowercase) and 'zero'.
-            raise ValueError('Cannot normalize Absolute value (zero magnitude / absolute)')
+            raise ValueError(
+                "Cannot normalize Absolute value (zero magnitude / absolute)"
+            )
 
         return AbsoluteValue(magnitude=1.0, direction=value.direction)

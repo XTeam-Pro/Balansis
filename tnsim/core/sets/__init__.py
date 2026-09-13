@@ -2,4 +2,4 @@
 
 from .zero_sum_infinite_set import ZeroSumInfiniteSet
 
-__all__ = ['ZeroSumInfiniteSet']
+__all__ = ["ZeroSumInfiniteSet"]

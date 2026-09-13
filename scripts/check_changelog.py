@@ -26,7 +26,9 @@ def main() -> None:
 
     # Check for version entry in changelog
     if f"[{version}]" in text or "[Unreleased]" in text:
-        print(f"CHANGELOG.md contains entry for version {version} or Unreleased section.")
+        print(
+            f"CHANGELOG.md contains entry for version {version} or Unreleased section."
+        )
         print("Changelog validation passed.")
     else:
         print(f"WARNING: No entry for [{version}] or [Unreleased] in CHANGELOG.md")

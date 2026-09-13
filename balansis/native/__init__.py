@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -8,14 +10,18 @@
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
 import importlib
+from typing import Any, Callable, Iterable, Iterator, Literal, cast
+
 from balansis.core.absolute import AbsoluteValue
 
-def available():
+
+def available() -> bool:
     try:
         mod = importlib.import_module("balansis_native")
         return hasattr(mod, "add_absolute")
     except Exception:
         return False
+
 
 def add_absolute(a: AbsoluteValue, b: AbsoluteValue) -> AbsoluteValue:
     if available():

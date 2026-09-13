@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Literal, cast
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -7,16 +11,22 @@
 #
 # See LICENSING.md in the project root for license selection details.
 # For commercial licensing: andrew@xteam.pro
-class AbsoluteArena:
-    def __init__(self):
-        self._cache = {}
+from balansis.core.absolute import AbsoluteValue
 
-    def alloc(self, magnitude: float, direction: int):
+
+class AbsoluteArena:
+    def __init__(self) -> None:
+        self._cache: dict[tuple[float, int], AbsoluteValue] = {}
+
+    def alloc(self, magnitude: float, direction: int) -> AbsoluteValue:
         key = (float(magnitude), int(direction))
         val = self._cache.get(key)
         if val is None:
             from balansis.core.absolute import AbsoluteValue
-            val = AbsoluteValue(magnitude=key[0], direction=key[1])
+
+            val = AbsoluteValue(
+                magnitude=key[0], direction=cast(Literal[-1, 1], key[1])
+            )
             self._cache[key] = val
         return val
 

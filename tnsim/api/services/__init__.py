@@ -2,4 +2,4 @@
 
 from .zerosum_service import ZeroSumService
 
-__all__ = ['ZeroSumService']
+__all__ = ["ZeroSumService"]

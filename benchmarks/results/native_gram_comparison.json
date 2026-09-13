@@ -1,0 +1,325 @@
+{
+  "artifact": "native_gram_comparison",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "numpy": "1.26.4",
+  "architecture": "x86_64",
+  "cpu": "Intel(R) Xeon(R) Gold 6458Q",
+  "threads": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "kernel_source_sha256": "e619bfa2d21f02cfcceb799f2a66c82ecb2475179c0dd95db2e4d52f6b4dd667",
+  "kernel_binary_sha256": "0b7815e61239f3a77635ec6eb9f1bf718f98a4428dabe49d9db51fb618791d64",
+  "python_source_sha256": "600567d3e6c71538c998907bda8caff46c7d94f9be1cdff6c8a10a3f0e738cf6",
+  "baseline_source_sha256": "57473008a74806b1d912a69b108900d23d3fb69f12bd47868aebc8329f7a08d3",
+  "methodology": "seed 774; prepared vectors; nine shuffled calibrated rounds; GC disabled; shared host without CPU pinning; previous SVD uses current exact C dots; layout-only ablation retains three dots",
+  "vectors": [
+    {
+      "size": 3,
+      "result": [
+        7.749444521606491,
+        2.227947592936973,
+        -1.593612645553957
+      ],
+      "methods": {
+        "three_integrated_dots": {
+          "median_ns": 11448.1484375,
+          "min_ns": 11113.509765625,
+          "max_ns": 11913.5,
+          "calls_per_round": 512,
+          "rounds": 9
+        },
+        "three_native_kernels": {
+          "median_ns": 1177.5548095703125,
+          "min_ns": 1168.466064453125,
+          "max_ns": 1214.5777587890625,
+          "calls_per_round": 8192,
+          "rounds": 9
+        },
+        "fused_array_api": {
+          "median_ns": 1640.041259765625,
+          "min_ns": 1618.13134765625,
+          "max_ns": 1665.035888671875,
+          "calls_per_round": 4096,
+          "rounds": 9
+        },
+        "fused_native_kernel": {
+          "median_ns": 914.5181884765625,
+          "min_ns": 899.566650390625,
+          "max_ns": 1187.2650146484375,
+          "calls_per_round": 8192,
+          "rounds": 9
+        }
+      }
+    },
+    {
+      "size": 1024,
+      "result": [
+        1027.8425120524164,
+        992.9830544544697,
+        30.876092533694987
+      ],
+      "methods": {
+        "three_integrated_dots": {
+          "median_ns": 31761.359375,
+          "min_ns": 30187.90625,
+          "max_ns": 34883.4453125,
+          "calls_per_round": 256,
+          "rounds": 9
+        },
+        "three_native_kernels": {
+          "median_ns": 18660.55078125,
+          "min_ns": 18105.744140625,
+          "max_ns": 18829.349609375,
+          "calls_per_round": 512,
+          "rounds": 9
+        },
+        "fused_array_api": {
+          "median_ns": 14330.2265625,
+          "min_ns": 13743.71484375,
+          "max_ns": 16029.2734375,
+          "calls_per_round": 512,
+          "rounds": 9
+        },
+        "fused_native_kernel": {
+          "median_ns": 13190.615234375,
+          "min_ns": 13000.802734375,
+          "max_ns": 14248.2734375,
+          "calls_per_round": 512,
+          "rounds": 9
+        }
+      }
+    },
+    {
+      "size": 100000,
+      "result": [
+        99568.669212214,
+        99866.89983554598,
+        52.770350723295195
+      ],
+      "methods": {
+        "three_integrated_dots": {
+          "median_ns": 2175647.75,
+          "min_ns": 2121670.0,
+          "max_ns": 2414909.75,
+          "calls_per_round": 4,
+          "rounds": 9
+        },
+        "three_native_kernels": {
+          "median_ns": 2028697.5,
+          "min_ns": 1988371.0,
+          "max_ns": 2117563.0,
+          "calls_per_round": 4,
+          "rounds": 9
+        },
+        "fused_array_api": {
+          "median_ns": 1575312.0,
+          "min_ns": 1555098.75,
+          "max_ns": 1767868.75,
+          "calls_per_round": 4,
+          "rounds": 9
+        },
+        "fused_native_kernel": {
+          "median_ns": 1574946.25,
+          "min_ns": 1554989.25,
+          "max_ns": 1702623.25,
+          "calls_per_round": 4,
+          "rounds": 9
+        }
+      }
+    }
+  ],
+  "svd": [
+    {
+      "shape": [
+        16,
+        4
+      ],
+      "methods": {
+        "previous_native_svd": {
+          "median_ns": 609600.9375,
+          "min_ns": 597054.625,
+          "max_ns": 742662.1875,
+          "calls_per_round": 16,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 4.874072516493233e-16,
+          "u_orthogonality_error": 4.2084834858973983e-16
+        },
+        "column_layout_three_dots": {
+          "median_ns": 582093.25,
+          "min_ns": 574362.75,
+          "max_ns": 614383.125,
+          "calls_per_round": 16,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 4.874072516493233e-16,
+          "u_orthogonality_error": 4.2084834858973983e-16
+        },
+        "fused_native_svd": {
+          "median_ns": 275919.75,
+          "min_ns": 273488.40625,
+          "max_ns": 332747.875,
+          "calls_per_round": 32,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 4.874072516493233e-16,
+          "u_orthogonality_error": 4.2084834858973983e-16
+        }
+      }
+    },
+    {
+      "shape": [
+        64,
+        8
+      ],
+      "methods": {
+        "previous_native_svd": {
+          "median_ns": 4018850.5,
+          "min_ns": 3909670.0,
+          "max_ns": 5109594.5,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.0157284927927768e-15,
+          "u_orthogonality_error": 1.897078922457159e-15
+        },
+        "column_layout_three_dots": {
+          "median_ns": 3775851.0,
+          "min_ns": 3725617.0,
+          "max_ns": 3862203.5,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.0157284927927768e-15,
+          "u_orthogonality_error": 1.897078922457159e-15
+        },
+        "fused_native_svd": {
+          "median_ns": 1769517.75,
+          "min_ns": 1730133.75,
+          "max_ns": 1895273.75,
+          "calls_per_round": 4,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.0157284927927768e-15,
+          "u_orthogonality_error": 1.897078922457159e-15
+        }
+      }
+    },
+    {
+      "shape": [
+        256,
+        8
+      ],
+      "methods": {
+        "previous_native_svd": {
+          "median_ns": 5328615.0,
+          "min_ns": 5038186.0,
+          "max_ns": 9239567.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 7.03608061696189e-16,
+          "u_orthogonality_error": 1.4454136917204761e-15
+        },
+        "column_layout_three_dots": {
+          "median_ns": 4817097.0,
+          "min_ns": 4595848.0,
+          "max_ns": 8404432.0,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 7.03608061696189e-16,
+          "u_orthogonality_error": 1.4454136917204761e-15
+        },
+        "fused_native_svd": {
+          "median_ns": 2631986.0,
+          "min_ns": 2437624.25,
+          "max_ns": 4564806.5,
+          "calls_per_round": 4,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 7.03608061696189e-16,
+          "u_orthogonality_error": 1.4454136917204761e-15
+        }
+      }
+    },
+    {
+      "shape": [
+        8,
+        64
+      ],
+      "methods": {
+        "previous_native_svd": {
+          "median_ns": 4001442.0,
+          "min_ns": 3912729.0,
+          "max_ns": 4115855.0,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.3865123028079817e-15,
+          "u_orthogonality_error": 3.631529141521119e-15
+        },
+        "column_layout_three_dots": {
+          "median_ns": 3863470.5,
+          "min_ns": 3729706.5,
+          "max_ns": 4219556.5,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.3865123028079817e-15,
+          "u_orthogonality_error": 3.631529141521119e-15
+        },
+        "fused_native_svd": {
+          "median_ns": 1728684.0,
+          "min_ns": 1709359.25,
+          "max_ns": 1789727.5,
+          "calls_per_round": 4,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.3865123028079817e-15,
+          "u_orthogonality_error": 3.631529141521119e-15
+        }
+      }
+    },
+    {
+      "shape": [
+        1024,
+        8
+      ],
+      "methods": {
+        "previous_native_svd": {
+          "median_ns": 8285454.0,
+          "min_ns": 8246144.0,
+          "max_ns": 8591623.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.0095051663937606e-15,
+          "u_orthogonality_error": 1.3383028337750283e-15
+        },
+        "column_layout_three_dots": {
+          "median_ns": 7089495.0,
+          "min_ns": 7019483.0,
+          "max_ns": 7287092.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.0095051663937606e-15,
+          "u_orthogonality_error": 1.3383028337750283e-15
+        },
+        "fused_native_svd": {
+          "median_ns": 4447336.0,
+          "min_ns": 4424858.0,
+          "max_ns": 4675045.0,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "bitwise_equal_to_previous": true,
+          "relative_reconstruction_error": 1.0095051663937606e-15,
+          "u_orthogonality_error": 1.3383028337750283e-15
+        }
+      }
+    }
+  ]
+}

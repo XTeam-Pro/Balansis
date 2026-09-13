@@ -23,15 +23,17 @@ When ``torch`` is available, :class:`EternalTorchOptimizer` is exported as
 well; it is a thin :class:`torch.optim.Optimizer` subclass mirroring the
 SGD-with-momentum semantics so it can be dropped into PyTorch training loops.
 """
+
 from __future__ import annotations
 
+import importlib
 import math
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 try:
-    import torch
+    torch: Any = importlib.import_module("torch")
 except ImportError:  # pragma: no cover - torch is optional
-    torch = None  # type: ignore[assignment]
+    torch = None
 
 from balansis.core.absolute import AbsoluteValue
 from balansis.core.eternity import (
@@ -54,12 +56,12 @@ def _validate_momentum(momentum: float) -> None:
 
 
 def _validate_weight_decay(weight_decay: float) -> None:
-    if weight_decay < 0.0:
+    if not math.isfinite(weight_decay) or weight_decay < 0.0:
         raise ValueError(f"Invalid weight_decay: {weight_decay}")
 
 
 def _validate_max_grad_norm(value: float) -> None:
-    if value < 0.0:
+    if not math.isfinite(value) or value < 0.0:
         raise ValueError(f"Invalid max_grad_norm: {value}")
 
 
@@ -163,7 +165,9 @@ class EternalOptimizer:
                 g = g + self.weight_decay * p.data
 
             grad_norm = float(torch.linalg.norm(g))
-            self.last_scale_state, self.last_scale_event = self.scale_policy_state(grad_norm)
+            self.last_scale_state, self.last_scale_event = self.scale_policy_state(
+                grad_norm
+            )
             if grad_norm == 0.0:
                 continue
             # ACT-normalised step size: lr / ||g||
@@ -215,7 +219,7 @@ if torch is not None:
             self.last_scale_state: Optional[ExtendedRatio] = None
             self.last_scale_event: Optional[SingularArithmeticEvent] = None
 
-        def step(self, closure: Optional[Any] = None) -> Optional[Any]:
+        def step(self, closure: Optional[Callable[[], Any]] = None) -> Any:
             loss = closure() if closure is not None else None
             for group in self.param_groups:
                 lr = group["lr"]
@@ -229,7 +233,10 @@ if torch is not None:
                         g = g + weight_decay * p.data
 
                     grad_norm = float(torch.linalg.norm(g))
-                    self.last_scale_state, self.last_scale_event = _extended_division_policy(
+                    (
+                        self.last_scale_state,
+                        self.last_scale_event,
+                    ) = _extended_division_policy(
                         lr,
                         grad_norm,
                         self.singular_policy,
@@ -239,7 +246,9 @@ if torch is not None:
                         continue
                     num = AbsoluteValue.from_float(lr)
                     den = AbsoluteValue.from_float(grad_norm)
-                    scale = EternalRatio(numerator=num, denominator=den).numerical_value()
+                    scale = EternalRatio(
+                        numerator=num, denominator=den
+                    ).numerical_value()
                     update = scale * g
 
                     state = self.state.setdefault(p, {})
@@ -259,7 +268,8 @@ if torch is not None:
             return loss
 
 else:  # pragma: no cover - torch is optional
-    EternalTorchOptimizer = None  # type: ignore[assignment]
+    if not TYPE_CHECKING:
+        EternalTorchOptimizer = None
 
 
 class AdaptiveEternalOptimizer:
@@ -291,10 +301,12 @@ class AdaptiveEternalOptimizer:
             raise ValueError(f"Invalid total_steps: {total_steps}")
         _validate_beta("beta1", betas[0])
         _validate_beta("beta2", betas[1])
-        if eps <= 0.0:
+        if not math.isfinite(eps) or eps <= 0.0:
             raise ValueError(f"Invalid eps: {eps}")
 
-        normalized_params = self._normalize_param_groups(params, lr, betas, eps, weight_decay)
+        normalized_params = self._normalize_param_groups(
+            params, lr, betas, eps, weight_decay
+        )
         self.param_groups: List[Dict[str, Any]] = normalized_params
 
         self.max_grad_norm = float(max_grad_norm)
@@ -317,13 +329,15 @@ class AdaptiveEternalOptimizer:
     ) -> List[Dict[str, Any]]:
         params = list(params)
         if not params:
-            return [{
-                "params": [],
-                "lr": lr,
-                "betas": betas,
-                "eps": eps,
-                "weight_decay": weight_decay,
-            }]
+            return [
+                {
+                    "params": [],
+                    "lr": lr,
+                    "betas": betas,
+                    "eps": eps,
+                    "weight_decay": weight_decay,
+                }
+            ]
         if isinstance(params[0], dict):
             groups: List[Dict[str, Any]] = []
             for g in params:
@@ -331,25 +345,31 @@ class AdaptiveEternalOptimizer:
                 g_betas = tuple(g.get("betas", betas))
                 g_eps = float(g.get("eps", eps))
                 g_wd = float(g.get("weight_decay", weight_decay))
+                if not math.isfinite(g_eps) or g_eps <= 0:
+                    raise ValueError(f"Invalid eps: {g_eps}")
                 _validate_lr(g_lr)
                 _validate_weight_decay(g_wd)
                 _validate_beta("beta1", g_betas[0])
                 _validate_beta("beta2", g_betas[1])
-                groups.append({
-                    "params": list(g["params"]),
-                    "lr": g_lr,
-                    "betas": g_betas,
-                    "eps": g_eps,
-                    "weight_decay": g_wd,
-                })
+                groups.append(
+                    {
+                        "params": list(g["params"]),
+                        "lr": g_lr,
+                        "betas": g_betas,
+                        "eps": g_eps,
+                        "weight_decay": g_wd,
+                    }
+                )
             return groups
-        return [{
-            "params": params,
-            "lr": lr,
-            "betas": betas,
-            "eps": eps,
-            "weight_decay": weight_decay,
-        }]
+        return [
+            {
+                "params": params,
+                "lr": lr,
+                "betas": betas,
+                "eps": eps,
+                "weight_decay": weight_decay,
+            }
+        ]
 
     def _get_lr_scale(self, step: int) -> float:
         """Linear warmup followed by cosine decay (if ``total_steps`` set)."""
@@ -441,8 +461,8 @@ class AdaptiveEternalOptimizer:
                 exp_avg.mul_(beta1).add_(g, alpha=1 - beta1)
                 exp_avg_sq.mul_(beta2).addcmul_(g, g, value=1 - beta2)
 
-                bias1 = 1 - beta1 ** t
-                bias2 = 1 - beta2 ** t
+                bias1 = 1 - beta1**t
+                bias2 = 1 - beta2**t
 
                 m_hat = exp_avg / bias1
                 v_hat = exp_avg_sq / bias2

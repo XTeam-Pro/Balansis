@@ -88,7 +88,7 @@ repos:
     rev: v2.2.4
     hooks:
       - id: codespell
-        args: [--skip=*.git,*.pyc,*.pdf,*.png,*.jpg,*.jpeg,*.svg]
+        args: ['--skip=*.git,*.pyc,*.pdf,*.png,*.jpg,*.jpeg,*.svg']
 
   # Проверка Jupyter notebooks
   - repo: https://github.com/nbQA-dev/nbQA
