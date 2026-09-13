@@ -1,0 +1,590 @@
+{
+  "artifact": "native_sum_comparison",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "numpy": "1.26.4",
+  "system": "Linux",
+  "architecture": "x86_64",
+  "cpu": "Intel(R) Xeon(R) Gold 6458Q",
+  "system_cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "kernel_source_sha256": "fb7882f447e935b4ac35008a454f0cce5a643d76ce22c83f3c8915597c0e3436",
+  "kernel_binary_sha256": "dc9aee66c32d7d15e899a3dcd42b77bdc60d9794e7687a308c1592d81eeb2602",
+  "python_source_sha256": "4452a685770f11deb592a5b00b47c66ec1955763ede82f0d6b9014909c595a6b",
+  "methodology": {
+    "oracle": "Fraction over each represented float64 input",
+    "timing": "9 shuffled rounds; calibration >=5ms; GC disabled for all methods",
+    "scope": "prepared inputs except explicitly named object creation",
+    "limitations": "single environment; no SIMD; no cross-platform guarantee"
+  },
+  "scenarios": [
+    {
+      "scenario": "ordinary",
+      "size": 3,
+      "rounded_reference": -0.15171232248432825,
+      "methods": {
+        "legacy_prebuilt_objects": {
+          "median_ns": 1790.71142578125,
+          "min_ns": 1744.668701171875,
+          "max_ns": 2076.3916015625,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": -0.15171232248432825,
+          "absolute_error_vs_exact": 1.3877787807814457e-17,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "legacy_including_object_creation": {
+          "median_ns": 5530.3896484375,
+          "min_ns": 5452.201171875,
+          "max_ns": 5822.013671875,
+          "calls_per_round": 1024,
+          "rounds": 9,
+          "result": -0.15171232248432825,
+          "absolute_error_vs_exact": 1.3877787807814457e-17,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "python_array_api": {
+          "median_ns": 2675.80859375,
+          "min_ns": 2627.10791015625,
+          "max_ns": 2884.4443359375,
+          "calls_per_round": 2048,
+          "rounds": 9,
+          "result": -0.15171232248432825,
+          "absolute_error_vs_exact": 1.3877787807814457e-17,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_array_api": {
+          "median_ns": 1752.821533203125,
+          "min_ns": 1697.173095703125,
+          "max_ns": 1806.413330078125,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": -0.15171232248432825,
+          "absolute_error_vs_exact": 1.3877787807814457e-17,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_kernel": {
+          "median_ns": 122.51449584960938,
+          "min_ns": 119.6541748046875,
+          "max_ns": 127.96798706054688,
+          "calls_per_round": 32768,
+          "rounds": 9,
+          "result": -0.15171232248432825,
+          "absolute_error_vs_exact": 1.3877787807814457e-17,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_array": {
+          "median_ns": 526.9142456054688,
+          "min_ns": 518.1939086914062,
+          "max_ns": 589.5867919921875,
+          "calls_per_round": 16384,
+          "rounds": 9,
+          "result": -0.15171232248432825,
+          "absolute_error_vs_exact": 1.3877787807814457e-17,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_prebuilt_list": {
+          "median_ns": 77.332763671875,
+          "min_ns": 76.51296997070312,
+          "max_ns": 135.88006591796875,
+          "calls_per_round": 32768,
+          "rounds": 9,
+          "result": -0.15171232248432825,
+          "absolute_error_vs_exact": 1.3877787807814457e-17,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "numpy_sum": {
+          "median_ns": 1544.0234375,
+          "min_ns": 1511.240234375,
+          "max_ns": 2061.4443359375,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": -0.1517123224843282,
+          "absolute_error_vs_exact": 6.938893903907228e-17,
+          "ulp_distance_from_rounded_reference": 2.0,
+          "matches_rounded_reference": false
+        }
+      }
+    },
+    {
+      "scenario": "cancellation",
+      "size": 3,
+      "rounded_reference": 1.0,
+      "methods": {
+        "legacy_prebuilt_objects": {
+          "median_ns": 1814.58740234375,
+          "min_ns": 1760.2080078125,
+          "max_ns": 1872.967529296875,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": 1.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "legacy_including_object_creation": {
+          "median_ns": 5576.02734375,
+          "min_ns": 5509.6416015625,
+          "max_ns": 5747.9072265625,
+          "calls_per_round": 1024,
+          "rounds": 9,
+          "result": 1.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "python_array_api": {
+          "median_ns": 2693.05419921875,
+          "min_ns": 2633.72998046875,
+          "max_ns": 2774.47802734375,
+          "calls_per_round": 2048,
+          "rounds": 9,
+          "result": 1.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_array_api": {
+          "median_ns": 1730.905517578125,
+          "min_ns": 1706.45703125,
+          "max_ns": 1793.48291015625,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": 1.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_kernel": {
+          "median_ns": 124.1851806640625,
+          "min_ns": 122.80609130859375,
+          "max_ns": 140.50588989257812,
+          "calls_per_round": 32768,
+          "rounds": 9,
+          "result": 1.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_array": {
+          "median_ns": 519.7898559570312,
+          "min_ns": 513.0077514648438,
+          "max_ns": 530.365966796875,
+          "calls_per_round": 16384,
+          "rounds": 9,
+          "result": 1.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_prebuilt_list": {
+          "median_ns": 76.60293579101562,
+          "min_ns": 74.935302734375,
+          "max_ns": 77.43801879882812,
+          "calls_per_round": 32768,
+          "rounds": 9,
+          "result": 1.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "numpy_sum": {
+          "median_ns": 1531.58935546875,
+          "min_ns": 1501.55615234375,
+          "max_ns": 1600.888916015625,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": 0.0,
+          "absolute_error_vs_exact": 1.0,
+          "ulp_distance_from_rounded_reference": 4503599627370496.0,
+          "matches_rounded_reference": false
+        }
+      }
+    },
+    {
+      "scenario": "ordinary",
+      "size": 1024,
+      "rounded_reference": 2.0813832241836003,
+      "methods": {
+        "legacy_prebuilt_objects": {
+          "median_ns": 133409.59375,
+          "min_ns": 130768.359375,
+          "max_ns": 150962.578125,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": 2.0813832241836003,
+          "absolute_error_vs_exact": 1.0099343236702474e-16,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "legacy_including_object_creation": {
+          "median_ns": 1205282.5,
+          "min_ns": 1196827.75,
+          "max_ns": 1228442.25,
+          "calls_per_round": 4,
+          "rounds": 9,
+          "result": 2.0813832241836003,
+          "absolute_error_vs_exact": 1.0099343236702474e-16,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "python_array_api": {
+          "median_ns": 109247.90625,
+          "min_ns": 108293.46875,
+          "max_ns": 110521.734375,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": 2.0813832241836003,
+          "absolute_error_vs_exact": 1.0099343236702474e-16,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_array_api": {
+          "median_ns": 3036.8310546875,
+          "min_ns": 2987.275390625,
+          "max_ns": 3195.25732421875,
+          "calls_per_round": 2048,
+          "rounds": 9,
+          "result": 2.0813832241836003,
+          "absolute_error_vs_exact": 1.0099343236702474e-16,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_kernel": {
+          "median_ns": 1372.9072265625,
+          "min_ns": 1347.126953125,
+          "max_ns": 1390.90771484375,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": 2.0813832241836003,
+          "absolute_error_vs_exact": 1.0099343236702474e-16,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_array": {
+          "median_ns": 36529.640625,
+          "min_ns": 35999.71484375,
+          "max_ns": 37664.4140625,
+          "calls_per_round": 256,
+          "rounds": 9,
+          "result": 2.0813832241836003,
+          "absolute_error_vs_exact": 1.0099343236702474e-16,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_prebuilt_list": {
+          "median_ns": 7877.728515625,
+          "min_ns": 7713.6962890625,
+          "max_ns": 8060.861328125,
+          "calls_per_round": 1024,
+          "rounds": 9,
+          "result": 2.0813832241836003,
+          "absolute_error_vs_exact": 1.0099343236702474e-16,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "numpy_sum": {
+          "median_ns": 1723.35888671875,
+          "min_ns": 1707.0078125,
+          "max_ns": 1769.089599609375,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": 2.081383224183597,
+          "absolute_error_vs_exact": 3.451720246433476e-15,
+          "ulp_distance_from_rounded_reference": 8.0,
+          "matches_rounded_reference": false
+        }
+      }
+    },
+    {
+      "scenario": "cancellation",
+      "size": 1024,
+      "rounded_reference": 341.0,
+      "methods": {
+        "legacy_prebuilt_objects": {
+          "median_ns": 127176.4375,
+          "min_ns": 125733.375,
+          "max_ns": 128235.484375,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": 341.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "legacy_including_object_creation": {
+          "median_ns": 1207473.0,
+          "min_ns": 1195475.75,
+          "max_ns": 1226577.25,
+          "calls_per_round": 4,
+          "rounds": 9,
+          "result": 341.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "python_array_api": {
+          "median_ns": 115474.453125,
+          "min_ns": 113288.53125,
+          "max_ns": 123576.75,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": 341.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_array_api": {
+          "median_ns": 2985.43994140625,
+          "min_ns": 2931.77294921875,
+          "max_ns": 3100.8740234375,
+          "calls_per_round": 2048,
+          "rounds": 9,
+          "result": 341.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_kernel": {
+          "median_ns": 1319.7919921875,
+          "min_ns": 1310.234375,
+          "max_ns": 1349.394775390625,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": 341.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_array": {
+          "median_ns": 30287.609375,
+          "min_ns": 29638.6796875,
+          "max_ns": 31073.8984375,
+          "calls_per_round": 256,
+          "rounds": 9,
+          "result": 341.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_prebuilt_list": {
+          "median_ns": 4383.93017578125,
+          "min_ns": 4333.54052734375,
+          "max_ns": 4532.1572265625,
+          "calls_per_round": 2048,
+          "rounds": 9,
+          "result": 341.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "numpy_sum": {
+          "median_ns": 1726.66357421875,
+          "min_ns": 1713.49267578125,
+          "max_ns": 1803.0654296875,
+          "calls_per_round": 4096,
+          "rounds": 9,
+          "result": 0.0,
+          "absolute_error_vs_exact": 341.0,
+          "ulp_distance_from_rounded_reference": 5998935441145856.0,
+          "matches_rounded_reference": false
+        }
+      }
+    },
+    {
+      "scenario": "ordinary",
+      "size": 100000,
+      "rounded_reference": -502.2508022176893,
+      "methods": {
+        "legacy_prebuilt_objects": {
+          "median_ns": 13618701.0,
+          "min_ns": 13303920.0,
+          "max_ns": 14482258.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "result": -502.2508022176893,
+          "absolute_error_vs_exact": 5.981131727590162e-15,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "legacy_including_object_creation": {
+          "median_ns": 159252045.0,
+          "min_ns": 153467720.0,
+          "max_ns": 167066073.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "result": -502.2508022176893,
+          "absolute_error_vs_exact": 5.981131727590162e-15,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "python_array_api": {
+          "median_ns": 10251522.0,
+          "min_ns": 10205511.0,
+          "max_ns": 11667339.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "result": -502.2508022176893,
+          "absolute_error_vs_exact": 5.981131727590162e-15,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_array_api": {
+          "median_ns": 119171.359375,
+          "min_ns": 118001.625,
+          "max_ns": 126728.421875,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": -502.2508022176893,
+          "absolute_error_vs_exact": 5.981131727590162e-15,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_kernel": {
+          "median_ns": 117275.875,
+          "min_ns": 115618.140625,
+          "max_ns": 129829.421875,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": -502.2508022176893,
+          "absolute_error_vs_exact": 5.981131727590162e-15,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_array": {
+          "median_ns": 3748698.5,
+          "min_ns": 3680554.0,
+          "max_ns": 4037066.5,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "result": -502.2508022176893,
+          "absolute_error_vs_exact": 5.981131727590162e-15,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_prebuilt_list": {
+          "median_ns": 1509534.0,
+          "min_ns": 1490377.5,
+          "max_ns": 1607455.5,
+          "calls_per_round": 4,
+          "rounds": 9,
+          "result": -502.2508022176893,
+          "absolute_error_vs_exact": 5.981131727590162e-15,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "numpy_sum": {
+          "median_ns": 16605.146484375,
+          "min_ns": 16463.408203125,
+          "max_ns": 17024.244140625,
+          "calls_per_round": 512,
+          "rounds": 9,
+          "result": -502.25080221768917,
+          "absolute_error_vs_exact": 1.0770570599402587e-13,
+          "ulp_distance_from_rounded_reference": 2.0,
+          "matches_rounded_reference": false
+        }
+      }
+    },
+    {
+      "scenario": "cancellation",
+      "size": 100000,
+      "rounded_reference": 33333.0,
+      "methods": {
+        "legacy_prebuilt_objects": {
+          "median_ns": 13255528.0,
+          "min_ns": 12708302.0,
+          "max_ns": 13516792.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "result": 33333.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "legacy_including_object_creation": {
+          "median_ns": 160346370.0,
+          "min_ns": 152487958.0,
+          "max_ns": 173320209.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "result": 33333.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "python_array_api": {
+          "median_ns": 10883466.0,
+          "min_ns": 10666128.0,
+          "max_ns": 11109771.0,
+          "calls_per_round": 1,
+          "rounds": 9,
+          "result": 33333.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_array_api": {
+          "median_ns": 119418.578125,
+          "min_ns": 118240.203125,
+          "max_ns": 121285.5625,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": 33333.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "native_kernel": {
+          "median_ns": 116597.671875,
+          "min_ns": 115599.421875,
+          "max_ns": 160570.5,
+          "calls_per_round": 64,
+          "rounds": 9,
+          "result": 33333.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_array": {
+          "median_ns": 2992263.0,
+          "min_ns": 2863132.0,
+          "max_ns": 3032862.0,
+          "calls_per_round": 2,
+          "rounds": 9,
+          "result": 33333.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "math_fsum_prebuilt_list": {
+          "median_ns": 427706.4375,
+          "min_ns": 421584.375,
+          "max_ns": 437913.125,
+          "calls_per_round": 16,
+          "rounds": 9,
+          "result": 33333.0,
+          "absolute_error_vs_exact": 0.0,
+          "ulp_distance_from_rounded_reference": 0.0,
+          "matches_rounded_reference": true
+        },
+        "numpy_sum": {
+          "median_ns": 16461.439453125,
+          "min_ns": 16244.318359375,
+          "max_ns": 16640.55078125,
+          "calls_per_round": 512,
+          "rounds": 9,
+          "result": 0.0,
+          "absolute_error_vs_exact": 33333.0,
+          "ulp_distance_from_rounded_reference": 4581252636082176.0,
+          "matches_rounded_reference": false
+        }
+      }
+    }
+  ]
+}

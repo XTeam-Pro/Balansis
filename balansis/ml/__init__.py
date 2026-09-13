@@ -13,12 +13,13 @@ Provides ACT-aware optimizers for training neural networks with
 enhanced numerical stability.
 """
 
-from .optimizer import EternalOptimizer, AdaptiveEternalOptimizer
+from .optimizer import AdaptiveEternalOptimizer, EternalOptimizer
 
 __all__ = ["EternalOptimizer", "AdaptiveEternalOptimizer"]
 
 try:
     import torch  # noqa: F401
+
     from .optimizer import EternalTorchOptimizer
 
     __all__.append("EternalTorchOptimizer")

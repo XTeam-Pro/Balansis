@@ -3,14 +3,14 @@
 Tests consistency between SVD, QR, and GEMM operations.
 """
 
-import pytest
 import numpy as np
+import pytest
 
-from balansis.core.absolute import AbsoluteValue
-from balansis.linalg.svd import svd
-from balansis.linalg.qr import qr_decompose
-from balansis.linalg.gemm import matmul
 from balansis import ACT_EPSILON
+from balansis.core.absolute import AbsoluteValue
+from balansis.linalg.gemm import matmul
+from balansis.linalg.qr import qr_decompose
+from balansis.linalg.svd import svd
 
 
 def _make_matrix(arr):
@@ -180,7 +180,8 @@ class TestLinalgExportsIntegration:
 
     def test_all_imports(self):
         """All linalg functions should be importable."""
-        from balansis.linalg import matmul, svd, qr_decompose
+        from balansis.linalg import matmul, qr_decompose, svd
+
         assert callable(matmul)
         assert callable(svd)
         assert callable(qr_decompose)

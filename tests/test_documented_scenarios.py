@@ -30,7 +30,7 @@ def test_readme_large_scale_aggregation_preserves_residual():
     assert compensation > 0.0
 
 
-def test_readme_cancellation_path_surfaces_non_absolute_residual():
+def test_readme_cancellation_respects_the_represented_operands():
     float_result = (1e16 + 1.0) - 1e16
     assert float_result == 0.0
 
@@ -38,9 +38,9 @@ def test_readme_cancellation_path_surfaces_non_absolute_residual():
     right = AbsoluteValue.from_float(-1e16)
     result, compensation = Operations.compensated_add(left, right)
 
-    assert not result.is_absolute()
-    assert result.magnitude > 0.0
-    assert compensation > 1.0
+    assert result.is_absolute()
+    assert result.to_float() == 0.0
+    assert compensation == Operations.STABILITY_FACTOR
 
 
 def test_finance_workflow_balances_to_absolute():

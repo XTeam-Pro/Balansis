@@ -6,16 +6,16 @@ against NumPy implementations for ill-conditioned matrices.
 """
 
 import json
-import time
 import math
-from typing import Dict, Any, List, Optional
+import time
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
 from balansis.core.absolute import AbsoluteValue
 from balansis.linalg.gemm import matmul
-from balansis.linalg.svd import svd
 from balansis.linalg.qr import qr_decompose
+from balansis.linalg.svd import svd
 
 
 class LinalgBenchmark:
@@ -40,18 +40,17 @@ class LinalgBenchmark:
     def _np_to_act(matrix: np.ndarray) -> List[List[AbsoluteValue]]:
         """Convert numpy matrix to ACT AbsoluteValue matrix."""
         return [
-            [AbsoluteValue.from_float(float(matrix[i, j]))
-             for j in range(matrix.shape[1])]
+            [
+                AbsoluteValue.from_float(float(matrix[i, j]))
+                for j in range(matrix.shape[1])
+            ]
             for i in range(matrix.shape[0])
         ]
 
     @staticmethod
     def _act_to_np(matrix: List[List[AbsoluteValue]]) -> np.ndarray:
         """Convert ACT matrix to numpy array."""
-        return np.array([
-            [cell.to_float() for cell in row]
-            for row in matrix
-        ])
+        return np.array([[cell.to_float() for cell in row] for row in matrix])
 
     def benchmark_gemm(self, n: int, cond: float = 1e10) -> Dict[str, Any]:
         """Benchmark GEMM: ACT vs numpy for ill-conditioned matrices."""
@@ -151,7 +150,9 @@ class LinalgBenchmark:
             "condition_number": cond,
             "numpy_orthogonality_error": numpy_orth_err,
             "act_orthogonality_error": act_orth_err,
-            "stability_ratio": numpy_orth_err / act_orth_err if act_orth_err > 0 else float("inf"),
+            "stability_ratio": (
+                numpy_orth_err / act_orth_err if act_orth_err > 0 else float("inf")
+            ),
             "numpy_time_s": numpy_time,
             "act_time_s": act_time,
         }
@@ -193,7 +194,11 @@ def main():
         for r in op_results:
             size = r["size"]
             ratio = r.get("stability_ratio", "N/A")
-            print(f"  {size}x{size}: stability_ratio = {ratio:.2f}" if isinstance(ratio, float) else f"  {size}x{size}: stability_ratio = {ratio}")
+            print(
+                f"  {size}x{size}: stability_ratio = {ratio:.2f}"
+                if isinstance(ratio, float)
+                else f"  {size}x{size}: stability_ratio = {ratio}"
+            )
 
 
 if __name__ == "__main__":

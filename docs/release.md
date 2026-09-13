@@ -1,107 +1,19 @@
-# Release Process
+# Preparing Balansis 1.2.0
 
-**Audience:** maintainers  
-**Status:** canonical
+The release consists of the Python library and its optional native kernels.
+Package versions are declared in `pyproject.toml`, `balansis/__init__.py` and
+`native/pyproject.toml`. TNSIM has separate metadata in `tnsim/setup.py`.
 
-Balansis publishes stable Python distributions to PyPI and exposes both a
-library API (`pip install balansis`) and a CLI entrypoint (`pipx install balansis`).
+1. Run the checks in [Development](development.md).
+2. Build the Python wheel and sdist with `python -m build`.
+3. Build the native wheel and sdist with `python -m build native`.
+4. Inspect package contents with `python scripts/validate_distributions.py`,
+   then install the resulting wheels in a fresh environment outside the source tree.
+5. Run `balansis doctor`, numerical examples and native capability checks there.
+6. Record artifact hashes and generate notes with
+   `python scripts/generate_release_notes.py 1.2.0`.
+7. Submit the candidate for review through the repository release workflow.
 
-## Current Stable Release
-
-- Package: `balansis`
-- Version: `1.1.0`
-- Python: `3.10`, `3.11`, `3.12`
-- Distribution formats: wheel and sdist
-- CLI command: `balansis`
-
-## Local Release Verification
-
-Run these checks before tagging:
-
-```bash
-python scripts/validate_version.py
-python scripts/check_changelog.py
-pytest tests/test_cli.py tests/test_extended_ratio.py tests/test_extended_ratio_semantic_parity.py --no-cov
-cd formal && lake build && lake env lean FormalAudit.lean
-```
-
-Build and validate distributions from the repository root:
-
-```bash
-python -m venv .release-venv
-.release-venv/bin/python -m pip install --upgrade pip build twine pipx
-.release-venv/bin/python -m build
-.release-venv/bin/twine check dist/*
-```
-
-Verify local `pip` install:
-
-```bash
-.release-venv/bin/python -m venv .pip-install-venv
-.pip-install-venv/bin/python -m pip install --upgrade pip
-.pip-install-venv/bin/python -m pip install dist/balansis-1.1.0-py3-none-any.whl
-.pip-install-venv/bin/python -c "import balansis; assert balansis.__version__ == '1.1.0'"
-.pip-install-venv/bin/balansis --version
-.pip-install-venv/bin/balansis doctor
-```
-
-Verify local `pipx` install:
-
-```bash
-.release-venv/bin/pipx install --force dist/balansis-1.1.0-py3-none-any.whl
-.release-venv/bin/pipx runpip balansis show balansis
-.release-venv/bin/pipx run --spec dist/balansis-1.1.0-py3-none-any.whl balansis --version
-```
-
-## Publishing
-
-The release workflow is `.github/workflows/release.yml`.
-
-It runs on:
-
-- `v*` tags
-- manual `workflow_dispatch`
-
-It performs:
-
-1. version and changelog validation
-2. license document validation
-3. Python release smoke tests
-4. Lean formal audit
-5. wheel and sdist build
-6. `twine check`
-7. pip install smoke checks on Linux/macOS/Windows and Python 3.10/3.11/3.12
-8. pipx install smoke checks on Linux
-9. TestPyPI publication
-10. PyPI publication
-11. GitHub Release creation
-
-Required GitHub secrets:
-
-- `TEST_PYPI_API_TOKEN`
-- `PYPI_API_TOKEN`
-
-## Tagging
-
-```bash
-git tag v1.1.0
-git push origin v1.1.0
-```
-
-Do not reuse a PyPI version after upload. If a published release must be fixed,
-bump the version and publish a new release.
-
-## End-user Installation
-
-```bash
-pip install balansis
-pipx install balansis
-```
-
-Smoke check:
-
-```bash
-python -c "import balansis; print(balansis.__version__)"
-balansis --version
-balansis doctor
-```
+The existing Release workflow validates the version, builds distributions,
+tests installation, and promotes the same Python distributions through its
+configured publication jobs. Native distributions are built separately.

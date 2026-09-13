@@ -1,11 +1,11 @@
 """Tests for ACT-compensated QR decomposition."""
 
-import pytest
 import numpy as np
+import pytest
 
-from balansis.core.absolute import AbsoluteValue
-from balansis.linalg.qr import qr_decompose, CompensatedQRResult
 from balansis import ACT_EPSILON
+from balansis.core.absolute import AbsoluteValue
+from balansis.linalg.qr import CompensatedQRResult, qr_decompose
 
 
 def _make_matrix(arr):
@@ -87,12 +87,14 @@ class TestQRHouseholder:
 
     def test_ill_conditioned(self):
         """QR of an ill-conditioned matrix should still produce orthogonal Q."""
-        A = np.array([
-            [1.0, 1.0, 1.0],
-            [1e-10, 1e-10, 0.0],
-            [1e-10, 0.0, 1e-10],
-            [0.0, 1e-10, 1e-10],
-        ])
+        A = np.array(
+            [
+                [1.0, 1.0, 1.0],
+                [1e-10, 1e-10, 0.0],
+                [1e-10, 0.0, 1e-10],
+                [0.0, 1e-10, 1e-10],
+            ]
+        )
         a = _make_matrix(A)
         result = qr_decompose(a, method="householder")
         Q = _to_numpy(result.Q)
@@ -208,11 +210,13 @@ class TestQRGramSchmidt:
 
     def test_ill_conditioned(self):
         """MGS with reorthogonalization on ill-conditioned matrix."""
-        A = np.array([
-            [1.0, 1.0],
-            [1e-4, 0.0],
-            [0.0, 1e-4],
-        ])
+        A = np.array(
+            [
+                [1.0, 1.0],
+                [1e-4, 0.0],
+                [0.0, 1e-4],
+            ]
+        )
         a = _make_matrix(A)
         result = qr_decompose(a, method="gram_schmidt")
         Q = _to_numpy(result.Q)

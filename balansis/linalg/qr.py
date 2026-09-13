@@ -21,10 +21,11 @@ diagnostic, and the per-step compensation factors. For backward
 compatibility, the result is iterable so ``Q, R = qr_decompose(A)`` still
 works.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterator, List, Tuple, Union
+from typing import Iterator, List, Tuple
 
 import numpy as np
 
@@ -64,8 +65,10 @@ def _to_numpy(mat: Matrix) -> np.ndarray:
 
 
 def _from_numpy(arr: np.ndarray) -> Matrix:
-    return [[AbsoluteValue.from_float(float(arr[i, j])) for j in range(arr.shape[1])]
-            for i in range(arr.shape[0])]
+    return [
+        [AbsoluteValue.from_float(float(arr[i, j])) for j in range(arr.shape[1])]
+        for i in range(arr.shape[0])
+    ]
 
 
 def _householder_qr(A: np.ndarray) -> Tuple[np.ndarray, np.ndarray, List[float]]:
@@ -127,7 +130,9 @@ def _givens_qr(A: np.ndarray) -> Tuple[np.ndarray, np.ndarray, List[float]]:
     return Q[:, :k], R[:k, :n], compensations
 
 
-def _modified_gram_schmidt_qr(A: np.ndarray) -> Tuple[np.ndarray, np.ndarray, List[float]]:
+def _modified_gram_schmidt_qr(
+    A: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, List[float]]:
     m, n = A.shape
     k = min(m, n)
     Q = np.zeros((m, k), dtype=np.float64)

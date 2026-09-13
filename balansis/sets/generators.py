@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Iterator, Literal, cast
+
 # Copyright (c) 2024-2026 Andrey Tikhonov (XTeam-Pro). All rights reserved.
 #
 # This file is part of Balansis.
@@ -9,14 +13,18 @@
 # For commercial licensing: andrew@xteam.pro
 from balansis.core.absolute import AbsoluteValue
 
-def harmonic_generator(sign: int = 1):
+
+def harmonic_generator(sign: int = 1) -> Iterator[AbsoluteValue]:
     n = 1
     while True:
-        yield AbsoluteValue(magnitude=1.0 / float(n), direction=int(sign))
+        yield AbsoluteValue(
+            magnitude=1.0 / float(n), direction=cast(Literal[-1, 1], int(sign))
+        )
         n += 1
 
-def grandis_generator():
+
+def grandis_generator() -> Iterator[AbsoluteValue]:
     d = 1
     while True:
-        yield AbsoluteValue(magnitude=1.0, direction=d)
+        yield AbsoluteValue(magnitude=1.0, direction=cast(Literal[-1, 1], d))
         d = -d

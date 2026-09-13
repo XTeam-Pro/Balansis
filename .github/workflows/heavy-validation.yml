@@ -1,0 +1,259 @@
+name: Heavy Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Expensive validation scope; choose the narrowest relevant risk
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - compatibility
+          - security
+          - documentation
+          - benchmarks
+          - formal
+
+permissions:
+  contents: read
+
+concurrency:
+  group: heavy-validation-${{ github.ref }}-${{ inputs.scope }}
+  cancel-in-progress: false
+
+jobs:
+  compatibility:
+    name: Compatibility / ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    if: inputs.scope == 'full' || inputs.scope == 'compatibility'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: true
+      max-parallel: 3
+      matrix:
+        include:
+          - {os: ubuntu-latest, python-version: '3.10'}
+          - {os: ubuntu-latest, python-version: '3.11'}
+          - {os: ubuntu-latest, python-version: '3.12'}
+          - {os: macos-latest, python-version: '3.12'}
+          - {os: windows-latest, python-version: '3.12'}
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            poetry.lock
+
+      - name: Install package and tests
+        run: |
+          python -m pip install --disable-pip-version-check \
+            -e . 'pytest>=7.4,<8' 'pytest-cov>=4.1,<5'
+
+      - name: Run compatibility tests
+        run: pytest tests/ --no-cov
+
+  numpy-compatibility:
+    name: NumPy Compatibility / ${{ matrix.numpy-version }}
+    if: inputs.scope == 'full' || inputs.scope == 'compatibility'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      max-parallel: 2
+      matrix:
+        numpy-version: ['1.24.0', '1.26.4']
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            poetry.lock
+
+      - name: Install selected NumPy and package
+        run: |
+          python -m pip install --disable-pip-version-check \
+            'numpy==${{ matrix.numpy-version }}' 'pytest>=7.4,<8'
+          python -m pip install --disable-pip-version-check --no-deps -e .
+
+      - name: Run NumPy integration tests
+        run: pytest tests/test_numpy_integration.py --no-cov
+
+  security:
+    name: Security Audit
+    if: inputs.scope == 'full' || inputs.scope == 'security'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            poetry.lock
+
+      - name: Install package and audit tools
+        run: |
+          python -m pip install --disable-pip-version-check --upgrade pip
+          python -m pip install --disable-pip-version-check \
+            -e . 'bandit[toml]==1.9.4' 'pip-audit==2.10.1'
+          mkdir -p security-results
+
+      - name: Run static security analysis
+        run: bandit -q -r balansis -ll -f json -o security-results/bandit.json
+
+      - name: Audit installed dependencies
+        run: python -m pip_audit --local --format=json --output=security-results/pip-audit.json
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: security-reports-${{ github.run_id }}
+          path: security-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  native:
+    name: Native Extension
+    if: inputs.scope == 'full' || inputs.scope == 'compatibility'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Check the Rust extension
+        run: cargo check --manifest-path balansis_native/Cargo.toml
+
+  documentation:
+    name: Documentation Audit
+    if: inputs.scope == 'full' || inputs.scope == 'documentation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Check local Markdown links
+        run: python3 .github/scripts/check_markdown_links.py
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            poetry.lock
+
+      - name: Install the package
+        run: python -m pip install --disable-pip-version-check -e .
+
+      - name: Validate API documentation
+        run: |
+          mkdir -p documentation-results
+          python scripts/validate_api_docs.py \
+            --output documentation-results/api-documentation.json
+          python scripts/validate_examples.py
+
+      - name: Upload documentation report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: documentation-report-${{ github.run_id }}
+          path: documentation-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  benchmarks:
+    name: Claim-Closure Benchmarks
+    if: inputs.scope == 'full' || inputs.scope == 'benchmarks'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            poetry.lock
+
+      - name: Install the package
+        run: python -m pip install --disable-pip-version-check -e .
+
+      - name: Run the canonical public benchmark scenarios
+        run: |
+          mkdir -p benchmark-results
+          python benchmarks/claim_closure_benchmarks.py \
+            --output benchmark-results/claim-closure.json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: benchmark-results-${{ github.run_id }}
+          path: benchmark-results/
+          retention-days: 30
+
+  formal:
+    name: Full Lean Validation
+    if: inputs.scope == 'full' || inputs.scope == 'formal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned Lean bootstrap
+        run: |
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/leanprover/elan/227caca133724d5516bee25c2aeb3e609478f2d8/elan-init.sh \
+            --output /tmp/elan-init.sh
+          echo 'a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh' | sha256sum --check -
+          sh /tmp/elan-init.sh -y
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Build and audit Lean libraries
+        run: |
+          cd formal
+          lake exe cache get
+          lake build BalansisFormal
+          lake build ACT
+          lake env lean FormalAudit.lean
+          if grep -Rnw . --include='*.lean' --exclude-dir='.lake' \
+            -e '\baxiom\b' -e '\bsorry\b' -e '\badmit\b'; then
+            echo "Lean source audit found a forbidden declaration."
+            exit 1
+          fi
